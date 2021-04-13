@@ -736,7 +736,7 @@ class ASTNestedName(ASTBase):
         elif mode == 'param':
             name = str(self)
             signode += nodes.emphasis(name, name)
-        elif mode == 'markType' or mode == 'lastIsName' or mode == 'markName':
+        elif mode in ['markType', 'lastIsName', 'markName']:
             # Each element should be a pending xref targeting the complete
             # prefix. however, only the identifier part should be a link, such
             # that template args can be a link as well.
@@ -1170,10 +1170,7 @@ class ASTExplicitCast(ASTExpression):
         self.expr = expr
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = [self.cast]
-        res.append('<')
-        res.append(transform(self.typ))
-        res.append('>(')
+        res = [self.cast, '<', transform(self.typ), '>(']
         res.append(transform(self.expr))
         res.append(')')
         return ''.join(res)
@@ -1389,10 +1386,7 @@ class ASTDeleteExpr(ASTExpression):
         return ''.join(res)
 
     def get_id(self, version: int) -> str:
-        if self.array:
-            id = "da"
-        else:
-            id = "dl"
+        id = "da" if self.array else "dl"
         return id + self.expr.get_id(version)
 
     def describe_signature(self, signode: TextElement, mode: str,
@@ -1414,9 +1408,7 @@ class ASTCastExpr(ASTExpression):
         self.expr = expr
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = ['(']
-        res.append(transform(self.typ))
-        res.append(')')
+        res = ['(', transform(self.typ), ')']
         res.append(transform(self.expr))
         return ''.join(res)
 
@@ -1439,8 +1431,7 @@ class ASTBinOpExpr(ASTExpression):
         self.ops = ops
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = []
-        res.append(transform(self.exprs[0]))
+        res = [transform(self.exprs[0])]
         for i in range(1, len(self.exprs)):
             res.append(' ')
             res.append(self.ops[i - 1])
@@ -1505,8 +1496,7 @@ class ASTAssignmentExpr(ASTExpression):
         self.ops = ops
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = []
-        res.append(transform(self.exprs[0]))
+        res = [transform(self.exprs[0])]
         for i in range(1, len(self.exprs)):
             res.append(' ')
             res.append(self.ops[i - 1])
@@ -1683,14 +1673,10 @@ class ASTTemplateArgs(ASTBase):
 
     def get_id(self, version: int) -> str:
         if version == 1:
-            res = []
-            res.append(':')
-            res.append('.'.join(a.get_id(version) for a in self.args))
-            res.append(':')
+            res = [':', '.'.join(a.get_id(version) for a in self.args), ':']
             return ''.join(res)
 
-        res = []
-        res.append('I')
+        res = ['I']
         if len(self.args) > 0:
             for a in self.args[:-1]:
                 res.append(a.get_id(version))
@@ -1923,8 +1909,7 @@ class ASTParametersQualifiers(ASTBase):
             return ''.join(a.get_id(version) for a in self.args)
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = []
-        res.append('(')
+        res = ['(']
         first = True
         for a in self.args:
             if not first:
@@ -2100,8 +2085,7 @@ class ASTDeclSpecs(ASTBase):
 
     def get_id(self, version: int) -> str:
         if version == 1:
-            res = []
-            res.append(self.trailingTypeSpec.get_id(version))
+            res = [self.trailingTypeSpec.get_id(version)]
             if self.allSpecs.volatile:
                 res.append('V')
             if self.allSpecs.const:
@@ -2122,12 +2106,12 @@ class ASTDeclSpecs(ASTBase):
         if len(l) > 0:
             res.append(l)
         if self.trailingTypeSpec:
-            if len(res) > 0:
+            if res:
                 res.append(" ")
             res.append(transform(self.trailingTypeSpec))
             r = str(self.rightSpecs)
             if len(r) > 0:
-                if len(res) > 0:
+                if res:
                     res.append(" ")
                 res.append(r)
         return "".join(res)
@@ -2388,9 +2372,10 @@ class ASTDeclaratorPtr(ASTDeclarator):
             if self.volatile:
                 res.append(' ')
             res.append('const')
-        if self.const or self.volatile or len(self.attrs) > 0:
-            if self.next.require_space_after_declSpecs():
-                res.append(' ')
+        if (
+            self.const or self.volatile or len(self.attrs) > 0
+        ) and self.next.require_space_after_declSpecs():
+            res.append(' ')
         res.append(transform(self.next))
         return ''.join(res)
 
@@ -2410,8 +2395,7 @@ class ASTDeclaratorPtr(ASTDeclarator):
             res.append(self.next.get_ptr_suffix_id(version))
             return ''.join(res)
 
-        res = [self.next.get_ptr_suffix_id(version)]
-        res.append('P')
+        res = [self.next.get_ptr_suffix_id(version), 'P']
         if self.volatile:
             res.append('V')
         if self.const:
@@ -2600,9 +2584,7 @@ class ASTDeclaratorMemPtr(ASTDeclarator):
         return True
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = []
-        res.append(transform(self.className))
-        res.append('::*')
+        res = [transform(self.className), '::*']
         if self.volatile:
             res.append('volatile')
         if self.const:
@@ -2631,7 +2613,6 @@ class ASTDeclaratorMemPtr(ASTDeclarator):
             raise NoOldIdError()
         else:
             raise NotImplementedError()
-            return self.next.get_ptr_suffix_id(version) + 'Dp'
 
     def get_type_id(self, version: int, returnTypeId: str) -> str:
         assert version >= 2
@@ -2692,9 +2673,7 @@ class ASTDeclaratorParen(ASTDeclarator):
         return True
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = ['(']
-        res.append(transform(self.inner))
-        res.append(')')
+        res = ['(', transform(self.inner), ')']
         res.append(transform(self.next))
         return ''.join(res)
 
@@ -2707,8 +2686,6 @@ class ASTDeclaratorParen(ASTDeclarator):
     def get_ptr_suffix_id(self, version: int) -> str:
         if version == 1:
             raise NoOldIdError()  # TODO: was this implemented before?
-            return self.next.get_ptr_suffix_id(version) + \
-                self.inner.get_ptr_suffix_id(version)
         else:
             return self.inner.get_ptr_suffix_id(version) + \
                 self.next.get_ptr_suffix_id(version)
@@ -2966,8 +2943,7 @@ class ASTTypeWithInit(ASTBase):
         return symbol.get_full_nested_name().get_id(version)
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = []
-        res.append(transform(self.type))
+        res = [transform(self.type)]
         if self.init:
             res.append(transform(self.init))
         return ''.join(res)
@@ -2992,8 +2968,7 @@ class ASTTypeUsing(ASTBase):
         return symbol.get_full_nested_name().get_id(version)
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = []
-        res.append(transform(self.name))
+        res = [transform(self.name)]
         if self.type:
             res.append(' = ')
             res.append(transform(self.type))
@@ -3088,8 +3063,7 @@ class ASTClass(ASTBase):
         return symbol.get_full_nested_name().get_id(version)
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = []
-        res.append(transform(self.name))
+        res = [transform(self.name)]
         if self.final:
             res.append(' final')
         if len(self.bases) > 0:
@@ -3180,8 +3154,7 @@ class ASTEnumerator(ASTBase):
         return symbol.get_full_nested_name().get_id(version)
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = []
-        res.append(transform(self.name))
+        res = [transform(self.name)]
         if self.init:
             res.append(transform(self.init))
         return ''.join(res)
@@ -3393,18 +3366,14 @@ class ASTTemplateParams(ASTBase):
 
     def get_id(self, version: int) -> str:
         assert version >= 2
-        res = []
-        res.append("I")
+        res = ["I"]
         for param in self.params:
             res.append(param.get_id(version))
         res.append("E")
         return ''.join(res)
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = []
-        res.append("template<")
-        res.append(", ".join(transform(a) for a in self.params))
-        res.append("> ")
+        res = ["template<", ", ".join(transform(a) for a in self.params), "> "]
         return ''.join(res)
 
     def describe_signature(self, signode: TextElement, mode: str,
@@ -3506,8 +3475,7 @@ class ASTTemplateIntroduction(ASTBase):
     def get_id(self, version: int) -> str:
         assert version >= 2
         # first do the same as a normal template parameter list
-        res = []
-        res.append("I")
+        res = ["I"]
         for param in self.params:
             res.append(param.get_id(version))
         res.append("E")
@@ -3522,9 +3490,7 @@ class ASTTemplateIntroduction(ASTBase):
         return ''.join(res)
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = []
-        res.append(transform(self.concept))
-        res.append('{')
+        res = [transform(self.concept), '{']
         res.append(', '.join(transform(param) for param in self.params))
         res.append('} ')
         return ''.join(res)
@@ -3559,15 +3525,11 @@ class ASTTemplateDeclarationPrefix(ASTBase):
     def get_id(self, version: int) -> str:
         assert version >= 2
         # this is not part of a normal name mangling system
-        res = []
-        for t in self.templates:
-            res.append(t.get_id(version))
+        res = [t.get_id(version) for t in self.templates]
         return ''.join(res)
 
     def _stringify(self, transform: StringifyTransform) -> str:
-        res = []
-        for t in self.templates:
-            res.append(transform(t))
+        res = [transform(t) for t in self.templates]
         return ''.join(res)
 
     def describe_signature(self, signode: desc_signature, mode: str,
@@ -3642,10 +3604,7 @@ class ASTDeclaration(ASTBase):
         # version >= 2
         if self.objectType == 'enumerator' and self.enumeratorScopedSymbol:
             return self.enumeratorScopedSymbol.declaration.get_id(version, prefixed)
-        if prefixed:
-            res = [_id_prefix[version]]
-        else:
-            res = []
+        res = [_id_prefix[version]] if prefixed else []
         if self.templatePrefix:
             res.append(self.templatePrefix.get_id(version))
         if self.requiresClause or self.trailingRequiresClause:
@@ -3925,8 +3884,7 @@ class Symbol:
     def get_all_symbols(self) -> Iterator[Any]:
         yield self
         for sChild in self._children:
-            for s in sChild.get_all_symbols():
-                yield s
+            yield from sChild.get_all_symbols()
 
     @property
     def children_recurse_anon(self) -> Generator["Symbol", None, None]:
@@ -4495,15 +4453,11 @@ class Symbol:
         if Symbol.debug_lookup:
             Symbol.debug_indent += 1
             Symbol.debug_print("add_name:")
-        if templatePrefix:
-            templateDecls = templatePrefix.templates
-        else:
-            templateDecls = []
-        res = self._add_symbols(nestedName, templateDecls,
-                                declaration=None, docname=None)
+        templateDecls = templatePrefix.templates if templatePrefix else []
         if Symbol.debug_lookup:
             Symbol.debug_indent -= 1
-        return res
+        return self._add_symbols(nestedName, templateDecls,
+                                declaration=None, docname=None)
 
     def add_declaration(self, declaration: ASTDeclaration, docname: str) -> "Symbol":
         if Symbol.debug_lookup:
@@ -4516,10 +4470,9 @@ class Symbol:
             templateDecls = declaration.templatePrefix.templates
         else:
             templateDecls = []
-        res = self._add_symbols(nestedName, templateDecls, declaration, docname)
         if Symbol.debug_lookup:
             Symbol.debug_indent -= 1
-        return res
+        return self._add_symbols(nestedName, templateDecls, declaration, docname)
 
     def find_identifier(self, identOrOp: Union[ASTIdentifier, ASTOperator],
                         matchSelf: bool, recurseInAnon: bool, searchInSiblings: bool
@@ -4624,9 +4577,11 @@ class Symbol:
             #       Though, the correctPrimaryTemplateArgs does
             #       that for primary templates.
             #       Is there another case where it would be good?
-            if parentSymbol.declaration is not None:
-                if parentSymbol.declaration.objectType == 'templateParam':
-                    raise QualifiedSymbolIsTemplateParam()
+            if (
+                parentSymbol.declaration is not None
+                and parentSymbol.declaration.objectType == 'templateParam'
+            ):
+                raise QualifiedSymbolIsTemplateParam()
             return None
 
         try:
@@ -5174,10 +5129,7 @@ class DefinitionParser(BaseParser):
         self.skip_ws()
         for op in _expression_unary_ops:
             # TODO: hmm, should we be able to backtrack here?
-            if op[0] in 'cn':
-                res = self.skip_word(op)
-            else:
-                res = self.skip_string(op)
+            res = self.skip_word(op) if op[0] in 'cn' else self.skip_string(op)
             if res:
                 expr = self._parse_cast_expression()
                 return ASTUnaryOpExpr(op, expr)
@@ -5220,9 +5172,7 @@ class DefinitionParser(BaseParser):
         pos = self.pos
         rooted = self.skip_string('::')
         self.skip_ws()
-        if not self.skip_word_and_ws('new'):
-            self.pos = pos
-        else:
+        if self.skip_word_and_ws('new'):
             # new-placement[opt] new-type-id new-initializer[opt]
             # new-placement[opt] ( type-id ) new-initializer[opt]
             isNewTypeId = True
@@ -5239,18 +5189,20 @@ class DefinitionParser(BaseParser):
                 self.fail("Sorry, parenthesised type-id in new expression not yet supported.")
             lst = self._parse_expression_list_or_braced_init_list()
             return ASTNewExpr(rooted, isNewTypeId, ASTType(declSpecs, decl), lst)
+        else:
+            self.pos = pos
         # delete-expression
         pos = self.pos
         rooted = self.skip_string('::')
         self.skip_ws()
-        if not self.skip_word_and_ws('delete'):
-            self.pos = pos
-        else:
+        if self.skip_word_and_ws('delete'):
             array = self.skip_string_and_ws('[')
             if array and not self.skip_string_and_ws(']'):
                 self.fail("Expected ']' in array delete-expression.")
             expr = self._parse_cast_expression()
             return ASTDeleteExpr(rooted, array, expr)
+        else:
+            self.pos = pos
         return self._parse_postfix_expression()
 
     def _parse_cast_expression(self) -> ASTExpression:
@@ -5269,9 +5221,7 @@ class DefinitionParser(BaseParser):
                 try:
                     return self._parse_unary_expression()
                 except DefinitionError as exUnary:
-                    errs = []
-                    errs.append((exCast, "If type cast expression"))
-                    errs.append((exUnary, "If unary expression"))
+                    errs = [(exCast, "If type cast expression"), (exUnary, "If unary expression")]
                     raise self._make_multi_error(errs,
                                                  "Error in cast expression.") from exUnary
         else:
@@ -5354,19 +5304,20 @@ class DefinitionParser(BaseParser):
             oneMore = False
             self.skip_ws()
             for op in _expression_assignment_ops:
-                if op[0] in 'anox':
-                    if not self.skip_word(op):
-                        continue
-                else:
-                    if not self.skip_string(op):
-                        continue
+                if (
+                    op[0] in 'anox'
+                    and not self.skip_word(op)
+                    or op[0] not in 'anox'
+                    and not self.skip_string(op)
+                ):
+                    continue
                 expr = self._parse_initializer_clause()
                 exprs.append(expr)
                 ops.append(op)
                 oneMore = True
             if not oneMore:
                 break
-        if len(ops) == 0:
+        if not ops:
             return orExpr
         else:
             return ASTAssignmentExpr(exprs, ops)
@@ -5420,14 +5371,14 @@ class DefinitionParser(BaseParser):
             brackets = {'(': ')', '{': '}', '[': ']', '<': '>'}
             symbols = []  # type: List[str]
             while not self.eof:
-                if (len(symbols) == 0 and self.current_char in end):
+                if not symbols and self.current_char in end:
                     break
-                if self.current_char in brackets.keys():
+                if self.current_char in brackets:
                     symbols.append(brackets[self.current_char])
                 elif len(symbols) > 0 and self.current_char == symbols[-1]:
                     symbols.pop()
                 self.pos += 1
-            if len(end) > 0 and self.eof:
+            if end and self.eof:
                 self.fail("Could not find end of expression starting at %d."
                           % startPos)
             value = self.definition[startPos:self.pos].strip()
@@ -5542,17 +5493,14 @@ class DefinitionParser(BaseParser):
             rooted = True
         while 1:
             self.skip_ws()
-            if len(names) > 0:
-                template = self.skip_word_and_ws('template')
-            else:
-                template = False
+            template = self.skip_word_and_ws('template') if names else False
             templates.append(template)
             identOrOp = None  # type: Union[ASTIdentifier, ASTOperator]
             if self.skip_word_and_ws('operator'):
                 identOrOp = self._parse_operator()
             else:
                 if not self.match(identifier_re):
-                    if memberPointer and len(names) > 0:
+                    if memberPointer and names:
                         templates.pop()
                         break
                     self.fail("Expected identifier in nested name.")
@@ -5608,7 +5556,7 @@ class DefinitionParser(BaseParser):
             elements.append('int')
         elif self.skip_word_and_ws('double'):
             elements.append('double')
-        if len(elements) > 0:
+        if elements:
             return ASTTrailingTypeSpecFundamental(' '.join(elements))
 
         # decltype
@@ -5764,10 +5712,9 @@ class DefinitionParser(BaseParser):
                     if self.skip_word('extern'):
                         storage = 'extern'
                         continue
-                if outer == 'member':
-                    if self.skip_word('mutable'):
-                        storage = 'mutable'
-                        continue
+                if outer == 'member' and self.skip_word('mutable'):
+                    storage = 'mutable'
+                    continue
                 if self.skip_word('register'):
                     storage = 'register'
                     continue
@@ -5817,9 +5764,8 @@ class DefinitionParser(BaseParser):
                                   friend, attrs)
 
     def _parse_decl_specs(self, outer: str, typed: bool = True) -> ASTDeclSpecs:
-        if outer:
-            if outer not in ('type', 'member', 'function', 'templateParam'):
-                raise Exception('Internal error, unknown outer "%s".' % outer)
+        if outer and outer not in ('type', 'member', 'function', 'templateParam'):
+            raise Exception('Internal error, unknown outer "%s".' % outer)
         """
         storage-class-specifier function-specifier "constexpr"
         "volatile" "const" trailing-type-specifier

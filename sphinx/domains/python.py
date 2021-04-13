@@ -80,11 +80,7 @@ ModuleEntry = NamedTuple('ModuleEntry', [('docname', str),
 
 def type_to_xref(text: str, env: BuildEnvironment = None) -> addnodes.pending_xref:
     """Convert a type string to a cross reference node."""
-    if text == 'None':
-        reftype = 'obj'
-    else:
-        reftype = 'class'
-
+    reftype = 'obj' if text == 'None' else 'class'
     if env:
         kwargs = {'py:module': env.ref_context.get('py:module'),
                   'py:class': env.ref_context.get('py:class')}
@@ -135,12 +131,11 @@ def _parse_annotation(annotation: str, env: BuildEnvironment = None) -> List[Nod
 
             return result
         else:
-            if sys.version_info >= (3, 6):
-                if isinstance(node, ast.Constant):
-                    if node.value is Ellipsis:
-                        return [addnodes.desc_sig_punctuation('', "...")]
-                    else:
-                        return [nodes.Text(node.value)]
+            if sys.version_info >= (3, 6) and isinstance(node, ast.Constant):
+                if node.value is Ellipsis:
+                    return [addnodes.desc_sig_punctuation('', "...")]
+                else:
+                    return [nodes.Text(node.value)]
 
             if sys.version_info < (3, 8):
                 if isinstance(node, ast.Ellipsis):
@@ -183,13 +178,9 @@ def _parse_arglist(arglist: str, env: BuildEnvironment = None) -> addnodes.desc_
         node = addnodes.desc_parameter()
         if param.kind == param.VAR_POSITIONAL:
             node += addnodes.desc_sig_operator('', '*')
-            node += addnodes.desc_sig_name('', param.name)
         elif param.kind == param.VAR_KEYWORD:
             node += addnodes.desc_sig_operator('', '**')
-            node += addnodes.desc_sig_name('', param.name)
-        else:
-            node += addnodes.desc_sig_name('', param.name)
-
+        node += addnodes.desc_sig_name('', param.name)
         if param.annotation is not param.empty:
             children = _parse_annotation(param.annotation, env)
             node += addnodes.desc_sig_punctuation('', ':')
@@ -795,10 +786,7 @@ class PyMethod(PyObject):
     })
 
     def needs_arglist(self) -> bool:
-        if 'property' in self.options:
-            return False
-        else:
-            return True
+        return 'property' not in self.options
 
     def get_signature_prefix(self, sig: str) -> str:
         prefix = []

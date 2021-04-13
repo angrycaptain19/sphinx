@@ -81,10 +81,9 @@ def process_documenter_options(documenter: "Type[Documenter]", config: Config, o
     for name in AUTODOC_DEFAULT_OPTIONS:
         if name not in documenter.option_spec:
             continue
-        else:
-            negated = options.pop('no-' + name, True) is None
-            if name in config.autodoc_default_options and not negated:
-                options[name] = config.autodoc_default_options[name]
+        negated = options.pop('no-' + name, True) is None
+        if name in config.autodoc_default_options and not negated:
+            options[name] = config.autodoc_default_options[name]
 
     return Options(assemble_option_dict(options.items(), documenter.option_spec))
 
@@ -154,5 +153,4 @@ class AutodocDirective(SphinxDirective):
         for fn in params.filename_set:
             self.state.document.settings.record_dependencies.add(fn)
 
-        result = parse_generated_content(self.state, params.result, documenter)
-        return result
+        return parse_generated_content(self.state, params.result, documenter)

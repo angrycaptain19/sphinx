@@ -268,12 +268,11 @@ class LiteralIncludeReader:
             if pyobject not in tags:
                 raise ValueError(__('Object named %r not found in include file %r') %
                                  (pyobject, self.filename))
-            else:
-                start = tags[pyobject][1]
-                end = tags[pyobject][2]
-                lines = lines[start - 1:end]
-                if 'lineno-match' in self.options:
-                    self.lineno_start = start
+            start = tags[pyobject][1]
+            end = tags[pyobject][2]
+            lines = lines[start - 1:end]
+            if 'lineno-match' in self.options:
+                self.lineno_start = start
 
         return lines
 

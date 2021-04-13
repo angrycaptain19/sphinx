@@ -42,11 +42,10 @@ def optional_int(argument: str) -> int:
     """
     if argument is None:
         return None
-    else:
-        value = int(argument)
-        if value < 0:
-            raise ValueError('negative value; must be positive or zero')
-        return value
+    value = int(argument)
+    if value < 0:
+        raise ValueError('negative value; must be positive or zero')
+    return value
 
 
 class ObjectDescription(SphinxDirective):

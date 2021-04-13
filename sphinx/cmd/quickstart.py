@@ -80,14 +80,14 @@ else:
 
 # function to get input from terminal -- overridden by the test suite
 def term_input(prompt: str) -> str:
-    if sys.platform == 'win32':
-        # Important: On windows, readline is not enabled by default.  In these
-        #            environment, escape sequences have been broken.  To avoid the
-        #            problem, quickstart uses ``print()`` to show prompt.
-        print(prompt, end='')
-        return input('')
-    else:
+    if sys.platform != 'win32':
         return input(prompt)
+
+    # Important: On windows, readline is not enabled by default.  In these
+    #            environment, escape sequences have been broken.  To avoid the
+    #            problem, quickstart uses ``print()`` to show prompt.
+    print(prompt, end='')
+    return input('')
 
 
 class ValidationError(Exception):
@@ -126,7 +126,7 @@ def boolean(x: str) -> bool:
 
 
 def suffix(x: str) -> str:
-    if not (x[0:1] == '.' and len(x) > 1):
+    if x[0:1] != '.' or len(x) <= 1:
         raise ValidationError(__("Please enter a file suffix, e.g. '.rst' or '.txt'."))
     return x
 
@@ -459,10 +459,7 @@ def valid_dir(d: Dict) -> bool:
         d['dot'] + 'templates',
         d['master'] + d['suffix'],
     ]
-    if set(reserved_names) & set(os.listdir(dir)):
-        return False
-
-    return True
+    return not set(reserved_names) & set(os.listdir(dir))
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -574,11 +571,10 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
             d['extensions'].extend(ext.split(','))
 
     try:
-        if 'quiet' in d:
-            if not {'project', 'author'}.issubset(d):
-                print(__('"quiet" is specified, but any of "project" or '
-                         '"author" is not specified.'))
-                return 1
+        if 'quiet' in d and not {'project', 'author'}.issubset(d):
+            print(__('"quiet" is specified, but any of "project" or '
+                     '"author" is not specified.'))
+            return 1
 
         if {'quiet', 'project', 'author'}.issubset(d):
             # quiet mode with all required params satisfied, use default

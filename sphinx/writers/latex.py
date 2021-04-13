@@ -986,11 +986,15 @@ class LaTeXTranslator(SphinxTranslator):
             self.needs_linetrimming = 1
         if len(node.traverse(nodes.paragraph)) >= 2:
             self.table.has_oldproblematic = True
-        if isinstance(node.parent.parent, nodes.thead) or (cell.col in self.table.stubs):
-            if len(node) == 1 and isinstance(node[0], nodes.paragraph) and node.astext() == '':
-                pass
-            else:
-                self.body.append('\\sphinxstyletheadfamily ')
+        if (
+            isinstance(node.parent.parent, nodes.thead)
+            or (cell.col in self.table.stubs)
+        ) and (
+            len(node) != 1
+            or not isinstance(node[0], nodes.paragraph)
+            or node.astext() != ''
+        ):
+            self.body.append('\\sphinxstyletheadfamily ')
         if self.needs_linetrimming:
             self.pushbody([])
         self.context.append(context)
@@ -1694,9 +1698,7 @@ class LaTeXTranslator(SphinxTranslator):
         pass
 
     def visit_citation_reference(self, node: Element) -> None:
-        if self.in_title:
-            pass
-        else:
+        if not self.in_title:
             self.body.append('\\sphinxcite{%s:%s}' % (node['docname'], node['refname']))
             raise nodes.SkipNode
 
@@ -1824,8 +1826,7 @@ class LaTeXTranslator(SphinxTranslator):
         done = 0
         if len(node.children) == 1:
             child = node.children[0]
-            if isinstance(child, nodes.bullet_list) or \
-                    isinstance(child, nodes.enumerated_list):
+            if isinstance(child, (nodes.bullet_list, nodes.enumerated_list)):
                 done = 1
         if not done:
             self.body.append('\\begin{quote}\n')
@@ -1836,8 +1837,7 @@ class LaTeXTranslator(SphinxTranslator):
         done = 0
         if len(node.children) == 1:
             child = node.children[0]
-            if isinstance(child, nodes.bullet_list) or \
-                    isinstance(child, nodes.enumerated_list):
+            if isinstance(child, (nodes.bullet_list, nodes.enumerated_list)):
                 done = 1
         if not done:
             self.body.append('\\end{quote}\n')

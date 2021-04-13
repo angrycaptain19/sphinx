@@ -164,17 +164,17 @@ class IndexEntries:
             k, v = item
             v[1] = sorted(((si, se) for (si, (se, void, void)) in v[1].items()),
                           key=keyfunc2)
-            if v[2] is None:
-                # now calculate the key
-                if k.startswith('\N{RIGHT-TO-LEFT MARK}'):
-                    k = k[1:]
-                letter = unicodedata.normalize('NFD', k[0])[0].upper()
-                if letter.isalpha() or letter == '_':
-                    return letter
-                else:
-                    # get all other symbols under one heading
-                    return _('Symbols')
-            else:
+            if v[2] is not None:
                 return v[2]
+
+            # now calculate the key
+            if k.startswith('\N{RIGHT-TO-LEFT MARK}'):
+                k = k[1:]
+            letter = unicodedata.normalize('NFD', k[0])[0].upper()
+            if letter.isalpha() or letter == '_':
+                return letter
+            else:
+                # get all other symbols under one heading
+                return _('Symbols')
         return [(key_, list(group))
                 for (key_, group) in groupby(newlist, keyfunc3)]

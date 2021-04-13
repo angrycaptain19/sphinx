@@ -37,13 +37,11 @@ class DirectoryHTMLBuilder(StandaloneHTMLBuilder):
 
     def get_outfilename(self, pagename: str) -> str:
         if pagename == 'index' or pagename.endswith(SEP + 'index'):
-            outfilename = path.join(self.outdir, os_path(pagename) +
+            return path.join(self.outdir, os_path(pagename) +
                                     self.out_suffix)
         else:
-            outfilename = path.join(self.outdir, os_path(pagename),
+            return path.join(self.outdir, os_path(pagename),
                                     'index' + self.out_suffix)
-
-        return outfilename
 
 
 # for compatibility

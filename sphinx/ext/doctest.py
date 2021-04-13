@@ -141,7 +141,7 @@ class TestDirective(SphinxDirective):
         if self.name == 'doctest' and 'pyversion' in self.options:
             try:
                 spec = self.options['pyversion']
-                python_version = '.'.join([str(v) for v in sys.version_info[:3]])
+                python_version = '.'.join(str(v) for v in sys.version_info[:3])
                 if not is_allowed_version(spec, python_version):
                     flag = doctest.OPTIONFLAGS_BY_NAME['SKIP']
                     node['options'][flag] = True  # Skip the test
@@ -394,15 +394,14 @@ Doctest summary
     def skipped(self, node: Element) -> bool:
         if 'skipif' not in node:
             return False
-        else:
-            condition = node['skipif']
-            context = {}  # type: Dict[str, Any]
-            if self.config.doctest_global_setup:
-                exec(self.config.doctest_global_setup, context)
-            should_skip = eval(condition, context)
-            if self.config.doctest_global_cleanup:
-                exec(self.config.doctest_global_cleanup, context)
-            return should_skip
+        condition = node['skipif']
+        context = {}  # type: Dict[str, Any]
+        if self.config.doctest_global_setup:
+            exec(self.config.doctest_global_setup, context)
+        should_skip = eval(condition, context)
+        if self.config.doctest_global_cleanup:
+            exec(self.config.doctest_global_cleanup, context)
+        return should_skip
 
     def test_doc(self, docname: str, doctree: Node) -> None:
         groups = {}  # type: Dict[str, TestGroup]
@@ -503,9 +502,7 @@ Doctest summary
             old_f = runner.failures
             self.type = 'exec'  # the snippet may contain multiple statements
             runner.run(sim_doctest, out=self._warn_out, clear_globs=False)
-            if runner.failures > old_f:
-                return False
-            return True
+            return runner.failures <= old_f
 
         # run the setup code
         if not run_setup_cleanup(self.setup_runner, group.setup, 'setup'):

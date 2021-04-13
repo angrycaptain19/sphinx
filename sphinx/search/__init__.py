@@ -301,13 +301,10 @@ class IndexBuilder:
         self._titles = dict(zip(index2fn, frozen['titles']))  # type: ignore
 
         def load_terms(mapping: Dict[str, Any]) -> Dict[str, Set[str]]:
-            rv = {}
-            for k, v in mapping.items():
-                if isinstance(v, int):
-                    rv[k] = {index2fn[v]}
-                else:
-                    rv[k] = {index2fn[i] for i in v}
-            return rv
+            return {
+                k: {index2fn[v]} if isinstance(v, int) else {index2fn[i] for i in v}
+                for k, v in mapping.items()
+            }
 
         self._mapping = load_terms(frozen['terms'])
         self._title_mapping = load_terms(frozen['titleterms'])

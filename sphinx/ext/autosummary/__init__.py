@@ -209,11 +209,11 @@ def get_documenter(app: Sphinx, obj: Any, parent: Any) -> "Type[Documenter]":
     # Get the corrent documenter class for *obj*
     classes = [cls for cls in app.registry.documenters.values()
                if cls.can_document_member(obj, '', False, parent_doc)]
-    if classes:
-        classes.sort(key=lambda cls: cls.priority)
-        return classes[-1]
-    else:
+    if not classes:
         return DataDocumenter
+
+    classes.sort(key=lambda cls: cls.priority)
+    return classes[-1]
 
 
 # -- .. autosummary:: ----------------------------------------------------------
@@ -628,10 +628,7 @@ def import_by_name(name: str, prefixes: List[str] = [None]) -> Tuple[str, Any, A
     tried = []
     for prefix in prefixes:
         try:
-            if prefix:
-                prefixed_name = '.'.join([prefix, name])
-            else:
-                prefixed_name = name
+            prefixed_name = '.'.join([prefix, name]) if prefix else name
             obj, parent, modname = _import_by_name(prefixed_name)
             return prefixed_name, obj, parent, modname
         except ImportError:
@@ -667,15 +664,14 @@ def _import_by_name(name: str) -> Tuple[Any, Any, str]:
             if modname in sys.modules:
                 break
 
-        if last_j < len(name_parts):
-            parent = None
-            obj = sys.modules[modname]
-            for obj_name in name_parts[last_j:]:
-                parent = obj
-                obj = getattr(obj, obj_name)
-            return obj, parent, modname
-        else:
+        if last_j >= len(name_parts):
             return sys.modules[modname], None, modname
+        parent = None
+        obj = sys.modules[modname]
+        for obj_name in name_parts[last_j:]:
+            parent = obj
+            obj = getattr(obj, obj_name)
+        return obj, parent, modname
     except (ValueError, ImportError, AttributeError, KeyError) as e:
         raise ImportError(*e.args) from e
 
@@ -775,9 +771,7 @@ def process_generate_options(app: Sphinx) -> None:
         env = app.builder.env
         genfiles = [env.doc2path(x, base=None) for x in env.found_docs
                     if os.path.isfile(env.doc2path(x))]
-    elif genfiles is False:
-        pass
-    else:
+    elif genfiles is not False:
         ext = list(app.config.source_suffix)
         genfiles = [genfile + (ext[0] if not genfile.endswith(tuple(ext)) else '')
                     for genfile in genfiles]
