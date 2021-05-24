@@ -4,12 +4,11 @@
 
     The metadata collector components for sphinx.environment.
 
-    :copyright: Copyright 2007-2020 by the Sphinx team, see AUTHORS.
+    :copyright: Copyright 2007-2021 by the Sphinx team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
 
-from typing import Any, Dict, List, Set
-from typing import cast
+from typing import Any, Dict, List, Set, cast
 
 from docutils import nodes
 
@@ -48,7 +47,7 @@ class MetadataCollector(EnvironmentCollector):
                     md[field_name.astext()] = field_body.astext()
                 elif isinstance(node, nodes.TextElement):
                     # other children must be TextElement
-                    # see: http://docutils.sourceforge.net/docs/ref/doctree.html#bibliographic-elements  # NOQA
+                    # see: https://docutils.sourceforge.io/docs/ref/doctree.html#bibliographic-elements  # NOQA
                     md[node.__class__.__name__] = node.astext()
 
             for name, value in md.items():
