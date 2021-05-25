@@ -397,10 +397,9 @@ class Documenter:
             except ImportError as exc:
                 if raiseerror:
                     raise
-                else:
-                    logger.warning(exc.args[0], type='autodoc', subtype='import_object')
-                    self.env.note_reread()
-                    return False
+                logger.warning(exc.args[0], type='autodoc', subtype='import_object')
+                self.env.note_reread()
+                return False
 
     def get_real_modname(self) -> str:
         """Get the real module name of an object to document.
@@ -419,9 +418,7 @@ class Documenter:
 
         subject = inspect.unpartial(self.object)
         modname = self.get_attr(subject, '__module__', None)
-        if modname and modname != self.modname:
-            return False
-        return True
+        return not modname or modname == self.modname
 
     def format_args(self, **kwargs: Any) -> str:
         """Format the argument signature of *self.object*.
@@ -869,9 +866,8 @@ class Documenter:
                 pass
 
         # check __module__ of object (for members not given explicitly)
-        if check_module:
-            if not self.check_module():
-                return
+        if check_module and not self.check_module():
+            return
 
         sourcename = self.get_sourcename()
 
@@ -949,11 +945,8 @@ class ModuleDocumenter(Documenter):
     def import_object(self, raiseerror: bool = False) -> bool:
         def is_valid_module_all(__all__: Any) -> bool:
             """Check the given *__all__* is valid for a module."""
-            if (isinstance(__all__, (list, tuple)) and
-                    all(isinstance(e, str) for e in __all__)):
-                return True
-            else:
-                return False
+            return (isinstance(__all__, (list, tuple)) and
+                    all(isinstance(e, str) for e in __all__))
 
         ret = super().import_object(raiseerror)
 
@@ -1662,16 +1655,12 @@ class DataDocumenter(ModuleLevelDocumenter):
                                   sourcename)
 
             try:
-                if self.object is UNINITIALIZED_ATTR:
-                    pass
-                else:
+                if self.object is not UNINITIALIZED_ATTR:
                     objrepr = object_description(self.object)
                     self.add_line('   :value: ' + objrepr, sourcename)
             except ValueError:
                 pass
-        elif self.options.annotation is SUPPRESS:
-            pass
-        else:
+        elif self.options.annotation is not SUPPRESS:
             self.add_line('   :annotation: %s' % self.options.annotation,
                           sourcename)
 
@@ -2054,16 +2043,12 @@ class AttributeDocumenter(DocstringStripSignatureMixin, ClassLevelDocumenter):  
             # data descriptors do not have useful values
             if not self._datadescriptor:
                 try:
-                    if self.object is INSTANCEATTR:
-                        pass
-                    else:
+                    if self.object is not INSTANCEATTR:
                         objrepr = object_description(self.object)
                         self.add_line('   :value: ' + objrepr, sourcename)
                 except ValueError:
                     pass
-        elif self.options.annotation is SUPPRESS:
-            pass
-        else:
+        elif self.options.annotation is not SUPPRESS:
             self.add_line('   :annotation: %s' % self.options.annotation, sourcename)
 
     def get_doc(self, encoding: str = None, ignore: int = None) -> List[List[str]]:
@@ -2194,10 +2179,9 @@ class SlotsAttributeDocumenter(AttributeDocumenter):
             except ImportError as exc:
                 if raiseerror:
                     raise
-                else:
-                    logger.warning(exc.args[0], type='autodoc', subtype='import_object')
-                    self.env.note_reread()
-                    return False
+                logger.warning(exc.args[0], type='autodoc', subtype='import_object')
+                self.env.note_reread()
+                return False
 
     def get_doc(self, encoding: str = None, ignore: int = None) -> List[List[str]]:
         """Decode and return lines of the docstring(s) for the object."""

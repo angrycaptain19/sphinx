@@ -41,12 +41,11 @@ def encode_string(s: str) -> str:
             n = ord(s)
             if n < 0x10000:
                 return '\\u%04x' % (n,)
-            else:
-                # surrogate pair
-                n -= 0x10000
-                s1 = 0xd800 | ((n >> 10) & 0x3ff)
-                s2 = 0xdc00 | (n & 0x3ff)
-                return '\\u%04x\\u%04x' % (s1, s2)
+            # surrogate pair
+            n -= 0x10000
+            s1 = 0xd800 | ((n >> 10) & 0x3ff)
+            s2 = 0xdc00 | (n & 0x3ff)
+            return '\\u%04x\\u%04x' % (s1, s2)
     return '"' + str(ESCAPE_ASCII.sub(replace, s)) + '"'
 
 
@@ -135,16 +134,15 @@ def loads(x: str) -> Any:
                 key = False
             oldobj = stack.pop()
             keys.pop()
-            if stack:
-                obj = stack[-1]
-                if isinstance(obj, dict):
-                    if keys[-1] is nothing:
-                        raise ValueError("invalid key object", oldobj)
-                    obj[keys[-1]] = oldobj
-                else:
-                    obj.append(oldobj)
-            else:
+            if not stack:
                 break
+            obj = stack[-1]
+            if isinstance(obj, dict):
+                if keys[-1] is nothing:
+                    raise ValueError("invalid key object", oldobj)
+                obj[keys[-1]] = oldobj
+            else:
+                obj.append(oldobj)
             i += 1
         elif c == ',':
             if key:
@@ -170,18 +168,17 @@ def loads(x: str) -> Any:
                     y = int(m.group())
                 else:
                     m = _name_re.match(x, i)
-                    if m:
-                        y = m.group()
-                        if y == 'true':
-                            y = True
-                        elif y == 'false':
-                            y = False
-                        elif y == 'null':
-                            y = None
-                        elif not key:
-                            raise ValueError("bareword as value")
-                    else:
+                    if not m:
                         raise ValueError("read error at pos %d" % i)
+                    y = m.group()
+                    if y == 'true':
+                        y = True
+                    elif y == 'false':
+                        y = False
+                    elif y == 'null':
+                        y = None
+                    elif not key:
+                        raise ValueError("bareword as value")
             i = m.end()
             if isinstance(obj, dict):
                 if key:

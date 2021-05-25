@@ -89,13 +89,12 @@ def import_object(modname: str, objpath: List[str], objtype: str = '',
             except ImportError as exc:
                 logger.debug('[autodoc] import %s => failed', modname)
                 exc_on_importing = exc
-                if '.' in modname:
-                    # retry with parent module
-                    modname, name = modname.rsplit('.', 1)
-                    objpath.insert(0, name)
-                else:
+                if '.' not in modname:
                     raise
 
+                # retry with parent module
+                modname, name = modname.rsplit('.', 1)
+                objpath.insert(0, name)
         obj = module
         parent = None
         object_name = None

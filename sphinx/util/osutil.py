@@ -163,16 +163,15 @@ fs_encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
 def abspath(pathdir: str) -> str:
     if Path is not None and isinstance(pathdir, Path):
         return pathdir.abspath()
-    else:
-        pathdir = path.abspath(pathdir)
-        if isinstance(pathdir, bytes):
-            try:
-                pathdir = pathdir.decode(fs_encoding)
-            except UnicodeDecodeError as exc:
-                raise UnicodeDecodeError('multibyte filename not supported on '
-                                         'this filesystem encoding '
-                                         '(%r)' % fs_encoding) from exc
-        return pathdir
+    pathdir = path.abspath(pathdir)
+    if isinstance(pathdir, bytes):
+        try:
+            pathdir = pathdir.decode(fs_encoding)
+        except UnicodeDecodeError as exc:
+            raise UnicodeDecodeError('multibyte filename not supported on '
+                                     'this filesystem encoding '
+                                     '(%r)' % fs_encoding) from exc
+    return pathdir
 
 
 def getcwd() -> str:

@@ -139,14 +139,13 @@ def _get_safe_url(url: str) -> str:
     parts = urlsplit(url)
     if parts.username is None:
         return url
+    frags = list(parts)
+    if parts.port:
+        frags[1] = '{}@{}:{}'.format(parts.username, parts.hostname, parts.port)
     else:
-        frags = list(parts)
-        if parts.port:
-            frags[1] = '{}@{}:{}'.format(parts.username, parts.hostname, parts.port)
-        else:
-            frags[1] = '{}@{}'.format(parts.username, parts.hostname)
+        frags[1] = '{}@{}'.format(parts.username, parts.hostname)
 
-        return urlunsplit(frags)
+    return urlunsplit(frags)
 
 
 def fetch_inventory(app: Sphinx, uri: str, inv: Any) -> Any:
@@ -220,7 +219,7 @@ def fetch_inventory_group(
             for fail in failures:
                 logger.info(*fail)
         else:
-            issues = '\n'.join([f[0] % f[1:] for f in failures])
+            issues = '\n'.join(f[0] % f[1:] for f in failures)
             logger.warning(__("failed to reach any of the inventories "
                               "with the following issues:") + "\n" + issues)
 
@@ -231,11 +230,9 @@ def load_mappings(app: Sphinx) -> None:
     inventories = InventoryAdapter(app.builder.env)
 
     with concurrent.futures.ThreadPoolExecutor() as pool:
-        futures = []
-        for name, (uri, invs) in app.config.intersphinx_mapping.values():
-            futures.append(pool.submit(
+        futures = [pool.submit(
                 fetch_inventory_group, name, uri, invs, inventories.cache, app, now
-            ))
+            ) for name, (uri, invs) in app.config.intersphinx_mapping.values()]
         updated = [f.result() for f in concurrent.futures.as_completed(futures)]
 
     if any(updated):
@@ -332,9 +329,13 @@ def missing_reference(app: Sphinx, env: BuildEnvironment, node: Element, contnod
                 newnode.append(contnode.__class__(dispname, dispname))
             return newnode
     # at least get rid of the ':' in the target if no explicit title given
-    if in_set is not None and not node.get('refexplicit', True):
-        if len(contnode) and isinstance(contnode[0], nodes.Text):
-            contnode[0] = nodes.Text(newtarget, contnode[0].rawsource)
+    if (
+        in_set is not None
+        and not node.get('refexplicit', True)
+        and len(contnode)
+        and isinstance(contnode[0], nodes.Text)
+    ):
+        contnode[0] = nodes.Text(newtarget, contnode[0].rawsource)
 
     return None
 

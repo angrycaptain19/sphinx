@@ -267,10 +267,10 @@ class InheritanceGraph:
     }
 
     def _format_node_attrs(self, attrs: Dict) -> str:
-        return ','.join(['%s=%s' % x for x in sorted(attrs.items())])
+        return ','.join('%s=%s' % x for x in sorted(attrs.items()))
 
     def _format_graph_attrs(self, attrs: Dict) -> str:
-        return ''.join(['%s=%s;\n' % x for x in sorted(attrs.items())])
+        return ''.join('%s=%s;\n' % x for x in sorted(attrs.items()))
 
     def generate_dot(self, name: str, urls: Dict = {}, env: BuildEnvironment = None,
                      graph_attrs: Dict = {}, node_attrs: Dict = {}, edge_attrs: Dict = {}

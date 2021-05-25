@@ -90,12 +90,11 @@ def jobs_argument(value: str) -> int:
     """
     if value == 'auto':
         return multiprocessing.cpu_count()
+    jobs = int(value)
+    if jobs <= 0:
+        raise argparse.ArgumentTypeError(__('job number should be a positive number'))
     else:
-        jobs = int(value)
-        if jobs <= 0:
-            raise argparse.ArgumentTypeError(__('job number should be a positive number'))
-        else:
-            return jobs
+        return jobs
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -215,10 +214,10 @@ def build_main(argv: List[str] = sys.argv[1:]) -> int:
 
     # handle remaining filename arguments
     filenames = args.filenames
-    missing_files = []
-    for filename in filenames:
-        if not os.path.isfile(filename):
-            missing_files.append(filename)
+    missing_files = [
+        filename for filename in filenames if not os.path.isfile(filename)
+    ]
+
     if missing_files:
         parser.error(__('cannot find files %r') % missing_files)
 

@@ -52,13 +52,13 @@ class ImageCollector(EnvironmentCollector):
             candidates = {}  # type: Dict[str, str]
             node['candidates'] = candidates
             imguri = node['uri']
-            if imguri.startswith('data:'):
+            if (
+                imguri.startswith('data:')
+                or not imguri.startswith('data:')
+                and imguri.find('://') != -1
+            ):
                 candidates['?'] = imguri
                 continue
-            elif imguri.find('://') != -1:
-                candidates['?'] = imguri
-                continue
-
             if imguri.endswith(os.extsep + '*'):
                 # Update `node['uri']` to a relative path from srcdir
                 # from a relative path from current document.
