@@ -45,12 +45,8 @@ def is_ssl_error(exc: Exception) -> bool:
     """Check an exception is SSLError."""
     if isinstance(exc, SSLError):
         return True
-    else:
-        args = getattr(exc, 'args', [])
-        if args and isinstance(args[0], SSLError):
-            return True
-        else:
-            return False
+    args = getattr(exc, 'args', [])
+    return bool(args and isinstance(args[0], SSLError))
 
 
 @contextmanager

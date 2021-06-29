@@ -94,10 +94,10 @@ class ReferencesResolver(SphinxPostTransform):
                     newnode = self.app.emit_firstresult('missing-reference', self.env,
                                                         node, contnode,
                                                         allowed_exceptions=(NoUri,))
-                    # still not found? warn if node wishes to be warned about or
-                    # we are in nit-picky mode
-                    if newnode is None:
-                        self.warn_missing_reference(refdoc, typ, target, node, domain)
+                # still not found? warn if node wishes to be warned about or
+                # we are in nit-picky mode
+                if newnode is None:
+                    self.warn_missing_reference(refdoc, typ, target, node, domain)
             except NoUri:
                 newnode = contnode
             node.replace_self(newnode or contnode)

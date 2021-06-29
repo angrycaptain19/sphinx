@@ -17,6 +17,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import argparse
 import inspect
 import locale
@@ -51,11 +52,6 @@ from sphinx.util import split_full_qualified_name
 from sphinx.util.inspect import safe_getattr
 from sphinx.util.osutil import ensuredir
 from sphinx.util.template import SphinxTemplateLoader
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-
 
 logger = logging.getLogger(__name__)
 
@@ -218,13 +214,9 @@ class ModuleScanner:
             except AttributeError:
                 imported = False
 
-            if imported_members:
+            if imported_members or not imported:
                 # list all members up
                 members.append(name)
-            elif imported is False:
-                # list not-imported members up
-                members.append(name)
-
         return members
 
 
@@ -255,21 +247,21 @@ def generate_autosummary_content(name: str, obj: Any, parent: Any,
             except AttributeError:
                 continue
             documenter = get_documenter(app, value, obj)
-            if documenter.objtype in types:
-                # skip imported members if expected
-                if imported or getattr(value, '__module__', None) == obj.__name__:
-                    skipped = skip_member(value, name, documenter.objtype)
-                    if skipped is True:
-                        pass
-                    elif skipped is False:
-                        # show the member forcedly
-                        items.append(name)
+            if documenter.objtype in types and (
+                imported or getattr(value, '__module__', None) == obj.__name__
+            ):
+                skipped = skip_member(value, name, documenter.objtype)
+                if skipped is True:
+                    pass
+                elif skipped is False:
+                    # show the member forcedly
+                    items.append(name)
+                    public.append(name)
+                else:
+                    items.append(name)
+                    if name in include_public or not name.startswith('_'):
+                        # considers member as public
                         public.append(name)
-                    else:
-                        items.append(name)
-                        if name in include_public or not name.startswith('_'):
-                            # considers member as public
-                            public.append(name)
         return public, items
 
     def get_module_attrs(members: Any) -> Tuple[List[str], List[str]]:
@@ -288,10 +280,11 @@ def generate_autosummary_content(name: str, obj: Any, parent: Any,
         return public, attrs
 
     def get_modules(obj: Any) -> Tuple[List[str], List[str]]:
-        items = []  # type: List[str]
-        for _, modname, ispkg in pkgutil.iter_modules(obj.__path__):
-            fullname = name + '.' + modname
-            items.append(fullname)
+        items = [
+            name + '.' + modname
+            for _, modname, ispkg in pkgutil.iter_modules(obj.__path__)
+        ]
+
         public = [x for x in items if not x.split('.')[-1].startswith('_')]
         return public, items
 

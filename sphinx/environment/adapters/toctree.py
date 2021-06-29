@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 from typing import Any, Iterable, List
 from typing import cast
 
@@ -19,12 +20,6 @@ from sphinx.locale import __
 from sphinx.util import url_re, logging
 from sphinx.util.matching import Matcher
 from sphinx.util.nodes import clean_astext, process_only_nodes
-
-if False:
-    # For type annotation
-    from sphinx.builders import Builder
-    from sphinx.environment import BuildEnvironment
-
 
 logger = logging.getLogger(__name__)
 
@@ -202,8 +197,7 @@ class TocTree:
                                     toplevel.pop(1)
                     # resolve all sub-toctrees
                     for subtocnode in toc.traverse(addnodes.toctree):
-                        if not (subtocnode.get('hidden', False) and
-                                not includehidden):
+                        if not subtocnode.get('hidden', False) or includehidden:
                             i = subtocnode.parent.index(subtocnode) + 1
                             for entry in _entries_from_toctree(
                                     subtocnode, [refdoc] + parents,
@@ -290,14 +284,12 @@ class TocTree:
                 # entry is to be collapsed
                 if maxdepth > 0 and depth > maxdepth:
                     subnode.parent.replace(subnode, [])
-                else:
-                    # cull sub-entries whose parents aren't 'current'
-                    if (collapse and depth > 1 and
+                elif (collapse and depth > 1 and
                             'iscurrent' not in subnode.parent):
-                        subnode.parent.remove(subnode)
-                    else:
-                        # recurse on visible children
-                        self._toctree_prune(subnode, depth + 1, maxdepth,  collapse)
+                    subnode.parent.remove(subnode)
+                else:
+                    # recurse on visible children
+                    self._toctree_prune(subnode, depth + 1, maxdepth,  collapse)
 
     def get_toc_for(self, docname: str, builder: "Builder") -> Node:
         """Return a TOC nodetree -- for use on the same page only!"""

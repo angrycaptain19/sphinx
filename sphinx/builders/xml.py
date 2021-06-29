@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 from os import path
 from typing import Any, Dict, Iterator, Set, Union
 
@@ -22,11 +23,6 @@ from sphinx.locale import __
 from sphinx.util import logging
 from sphinx.util.osutil import ensuredir, os_path
 from sphinx.writers.xml import XMLWriter, PseudoXMLWriter
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-
 
 logger = logging.getLogger(__name__)
 

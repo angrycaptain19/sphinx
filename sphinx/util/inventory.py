@@ -7,6 +7,7 @@
     :copyright: Copyright 2007-2020 by the Sphinx team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
+
 import os
 import re
 import zlib
@@ -18,11 +19,6 @@ from sphinx.util.typing import Inventory
 
 BUFSIZE = 16 * 1024
 logger = logging.getLogger(__name__)
-
-if False:
-    # For type annotation
-    from sphinx.builders import Builder
-    from sphinx.environment import BuildEnvironment
 
 
 class InventoryFileReader:

@@ -409,11 +409,10 @@ class EpubBuilder(StandaloneHTMLBuilder):
                     logger.warning(__('cannot copy image file %r: %s'),
                                    path.join(self.srcdir, src), err)
                 continue
-            if self.config.epub_fix_images:
-                if img.mode in ('P',):
-                    # See the Pillow documentation for Image.convert()
-                    # https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.convert
-                    img = img.convert()
+            if self.config.epub_fix_images and img.mode in ('P',):
+                # See the Pillow documentation for Image.convert()
+                # https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.convert
+                img = img.convert()
             if self.config.epub_max_image_width > 0:
                 (width, height) = img.size
                 nw = self.config.epub_max_image_width
@@ -486,8 +485,7 @@ class EpubBuilder(StandaloneHTMLBuilder):
         """Create a dictionary with all metadata for the content.opf
         file properly escaped.
         """
-        metadata = {}  # type: Dict[str, Any]
-        metadata['title'] = html.escape(self.config.epub_title)
+        metadata = {'title': html.escape(self.config.epub_title)}
         metadata['author'] = html.escape(self.config.epub_author)
         metadata['uid'] = html.escape(self.config.epub_uid)
         metadata['lang'] = html.escape(self.config.epub_language)
@@ -601,7 +599,7 @@ class EpubBuilder(StandaloneHTMLBuilder):
                     self.files.append(file)
                 if type == 'cover':
                     auto_add_cover = False
-                if type == 'toc':
+                elif type == 'toc':
                     auto_add_toc = False
                 metadata['guides'].append(Guide(html.escape(type),
                                                 html.escape(title),
@@ -635,8 +633,7 @@ class EpubBuilder(StandaloneHTMLBuilder):
         Subelements of a node are nested inside the navpoint.  For nested nodes
         the parent node is reinserted in the subnav.
         """
-        navstack = []  # type: List[NavPoint]
-        navstack.append(NavPoint('dummy', '', '', '', []))
+        navstack = [NavPoint('dummy', '', '', '', [])]
         level = 0
         lastnode = None
         for node in nodes:
@@ -677,9 +674,11 @@ class EpubBuilder(StandaloneHTMLBuilder):
         """Create a dictionary with all metadata for the toc.ncx file
         properly escaped.
         """
-        metadata = {}  # type: Dict[str, Any]
-        metadata['uid'] = self.config.epub_uid
-        metadata['title'] = html.escape(self.config.epub_title)
+        metadata = {
+            'uid': self.config.epub_uid,
+            'title': html.escape(self.config.epub_title),
+        }
+
         metadata['level'] = level
         metadata['navpoints'] = navpoints
         return metadata

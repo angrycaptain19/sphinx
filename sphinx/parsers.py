@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import warnings
 from typing import Any, Dict, List, Union
 
@@ -20,12 +21,6 @@ from docutils.transforms.universal import SmartQuotes
 
 from sphinx.deprecation import RemovedInSphinx50Warning
 from sphinx.util.rst import append_epilog, prepend_prolog
-
-if False:
-    # For type annotation
-    from docutils.transforms import Transform  # NOQA
-    from typing import Type  # NOQA # for python3.5.1
-    from sphinx.application import Sphinx
 
 
 class Parser(docutils.parsers.Parser):

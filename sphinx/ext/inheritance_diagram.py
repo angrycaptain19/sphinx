@@ -120,12 +120,12 @@ def import_classes(name: str, currmodule: str) -> Any:
         # If imported object is a class, just return it
         return [target]
     elif inspect.ismodule(target):
-        # If imported object is a module, return classes defined on it
-        classes = []
-        for cls in target.__dict__.values():
-            if inspect.isclass(cls) and cls.__module__ == target.__name__:
-                classes.append(cls)
-        return classes
+        return [
+            cls
+            for cls in target.__dict__.values()
+            if inspect.isclass(cls) and cls.__module__ == target.__name__
+        ]
+
     raise InheritanceException('%r specified for inheritance diagram is '
                                'not a class or module' % name)
 
@@ -267,10 +267,10 @@ class InheritanceGraph:
     }
 
     def _format_node_attrs(self, attrs: Dict) -> str:
-        return ','.join(['%s=%s' % x for x in sorted(attrs.items())])
+        return ','.join('%s=%s' % x for x in sorted(attrs.items()))
 
     def _format_graph_attrs(self, attrs: Dict) -> str:
-        return ''.join(['%s=%s;\n' % x for x in sorted(attrs.items())])
+        return ''.join('%s=%s;\n' % x for x in sorted(attrs.items()))
 
     def generate_dot(self, name: str, urls: Dict = {}, env: BuildEnvironment = None,
                      graph_attrs: Dict = {}, node_attrs: Dict = {}, edge_attrs: Dict = {}
@@ -296,10 +296,7 @@ class InheritanceGraph:
             n_attrs.update(env.config.inheritance_node_attrs)
             e_attrs.update(env.config.inheritance_edge_attrs)
 
-        res = []  # type: List[str]
-        res.append('digraph %s {\n' % name)
-        res.append(self._format_graph_attrs(g_attrs))
-
+        res = ['digraph %s {\n' % name, self._format_graph_attrs(g_attrs)]
         for name, fullname, bases, tooltip in sorted(self.class_info):
             # Write the node
             this_node_attrs = n_attrs.copy()

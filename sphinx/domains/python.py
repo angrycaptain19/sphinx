@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import builtins
 import inspect
 import re
@@ -39,11 +40,6 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx.util.inspect import signature_from_str
 from sphinx.util.nodes import make_id, make_refnode
 from sphinx.util.typing import TextlikeNode
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-
 
 logger = logging.getLogger(__name__)
 
@@ -80,11 +76,7 @@ ModuleEntry = NamedTuple('ModuleEntry', [('docname', str),
 
 def type_to_xref(text: str, env: BuildEnvironment = None) -> addnodes.pending_xref:
     """Convert a type string to a cross reference node."""
-    if text == 'None':
-        reftype = 'obj'
-    else:
-        reftype = 'class'
-
+    reftype = 'obj' if text == 'None' else 'class'
     if env:
         kwargs = {'py:module': env.ref_context.get('py:module'),
                   'py:class': env.ref_context.get('py:class')}
@@ -135,12 +127,11 @@ def _parse_annotation(annotation: str, env: BuildEnvironment = None) -> List[Nod
 
             return result
         else:
-            if sys.version_info >= (3, 6):
-                if isinstance(node, ast.Constant):
-                    if node.value is Ellipsis:
-                        return [addnodes.desc_sig_punctuation('', "...")]
-                    else:
-                        return [nodes.Text(node.value)]
+            if sys.version_info >= (3, 6) and isinstance(node, ast.Constant):
+                if node.value is Ellipsis:
+                    return [addnodes.desc_sig_punctuation('', "...")]
+                else:
+                    return [nodes.Text(node.value)]
 
             if sys.version_info < (3, 8):
                 if isinstance(node, ast.Ellipsis):
@@ -183,13 +174,9 @@ def _parse_arglist(arglist: str, env: BuildEnvironment = None) -> addnodes.desc_
         node = addnodes.desc_parameter()
         if param.kind == param.VAR_POSITIONAL:
             node += addnodes.desc_sig_operator('', '*')
-            node += addnodes.desc_sig_name('', param.name)
         elif param.kind == param.VAR_KEYWORD:
             node += addnodes.desc_sig_operator('', '**')
-            node += addnodes.desc_sig_name('', param.name)
-        else:
-            node += addnodes.desc_sig_name('', param.name)
-
+        node += addnodes.desc_sig_name('', param.name)
         if param.annotation is not param.empty:
             children = _parse_annotation(param.annotation, env)
             node += addnodes.desc_sig_punctuation('', ':')
@@ -448,10 +435,9 @@ class PyObject(ObjectDescription):
                 logger.warning("could not parse arglist (%r): %s", arglist, exc,
                                location=signode)
                 _pseudo_parse_arglist(signode, arglist)
-        else:
-            if self.needs_arglist():
-                # for callables, add an empty parameter list
-                signode += addnodes.desc_parameterlist()
+        elif self.needs_arglist():
+            # for callables, add an empty parameter list
+            signode += addnodes.desc_parameterlist()
 
         if retann:
             children = _parse_annotation(retann, self.env)
@@ -795,10 +781,7 @@ class PyMethod(PyObject):
     })
 
     def needs_arglist(self) -> bool:
-        if 'property' in self.options:
-            return False
-        else:
-            return True
+        return 'property' not in self.options
 
     def get_signature_prefix(self, sig: str) -> str:
         prefix = []
@@ -1271,20 +1254,18 @@ class PythonDomain(Domain):
                         matches = [(oname, self.objects[oname]) for oname in self.objects
                                    if oname.endswith(searchname) and
                                    self.objects[oname].objtype in objtypes]
-        else:
-            # NOTE: searching for exact match, object type is not considered
-            if name in self.objects:
-                newname = name
-            elif type == 'mod':
-                # only exact matches allowed for modules
-                return []
-            elif classname and classname + '.' + name in self.objects:
-                newname = classname + '.' + name
-            elif modname and modname + '.' + name in self.objects:
-                newname = modname + '.' + name
-            elif modname and classname and \
-                    modname + '.' + classname + '.' + name in self.objects:
-                newname = modname + '.' + classname + '.' + name
+        elif name in self.objects:
+            newname = name
+        elif type == 'mod':
+            # only exact matches allowed for modules
+            return []
+        elif classname and classname + '.' + name in self.objects:
+            newname = classname + '.' + name
+        elif modname and modname + '.' + name in self.objects:
+            newname = modname + '.' + name
+        elif modname and classname and \
+                modname + '.' + classname + '.' + name in self.objects:
+            newname = modname + '.' + classname + '.' + name
         if newname is not None:
             matches.append((newname, self.objects[newname]))
         return matches

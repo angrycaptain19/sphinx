@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import re
 import textwrap
 import warnings
@@ -28,11 +29,6 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxTranslator
 from sphinx.util.i18n import format_date
 from sphinx.writers.latex import collected_footnote
-
-if False:
-    # For type annotation
-    from sphinx.builders.texinfo import TexinfoBuilder
-
 
 logger = logging.getLogger(__name__)
 
@@ -300,8 +296,7 @@ class TexinfoTranslator(SphinxTranslator):
     def collect_node_menus(self) -> None:
         """Collect the menu entries for each "node" section."""
         node_menus = self.node_menus
-        targets = [self.document]  # type: List[Element]
-        targets.extend(self.document.traverse(nodes.section))
+        targets = [self.document, *self.document.traverse(nodes.section)]
         for node in targets:
             assert 'node_name' in node and node['node_name']
             entries = [s['node_name'] for s in find_subsections(node)]
@@ -716,12 +711,7 @@ class TexinfoTranslator(SphinxTranslator):
         elif uri.startswith('%'):
             # references to documents or labels inside documents
             hashindex = uri.find('#')
-            if hashindex == -1:
-                # reference to the document
-                id = uri[1:] + '::doc'
-            else:
-                # reference to a label
-                id = uri[1:].replace('#', ':')
+            id = uri[1:] + '::doc' if hashindex == -1 else uri[1:].replace('#', ':')
             self.add_xref(id, name, node)
         elif uri.startswith('info:'):
             # references to an external Info file
@@ -1049,7 +1039,7 @@ class TexinfoTranslator(SphinxTranslator):
         self.entry_sep = '@tab'
 
     def depart_entry(self, node: Element) -> None:
-        for i in range(node.get('morecols', 0)):
+        for _ in range(node.get('morecols', 0)):
             self.body.append('\n@tab\n')
 
     # -- Field Lists
@@ -1197,10 +1187,9 @@ class TexinfoTranslator(SphinxTranslator):
     def visit_image(self, node: Element) -> None:
         if node['uri'] in self.builder.images:
             uri = self.builder.images[node['uri']]
+        elif self.ignore_missing_images:
+            return
         else:
-            # missing image!
-            if self.ignore_missing_images:
-                return
             uri = node['uri']
         if uri.find('://') != -1:
             # ignore remote images
@@ -1275,10 +1264,8 @@ class TexinfoTranslator(SphinxTranslator):
 
     def visit_productionlist(self, node: Element) -> None:
         self.visit_literal_block(None)
-        names = []
         productionlist = cast(Iterable[addnodes.production], node)
-        for production in productionlist:
-            names.append(production['tokenname'])
+        names = [production['tokenname'] for production in productionlist]
         maxlen = max(len(name) for name in names)
         for production in productionlist:
             if production['tokenname']:

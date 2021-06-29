@@ -14,18 +14,21 @@ from sphinx.builders.html import HTMLTranslator
 
 
 def get_node_equation_number(writer: HTMLTranslator, node: nodes.math_block) -> str:
-    if writer.builder.config.math_numfig and writer.builder.config.numfig:
-        figtype = 'displaymath'
-        if writer.builder.name == 'singlehtml':
-            key = "%s/%s" % (writer.docnames[-1], figtype)
-        else:
-            key = figtype
-
-        id = node['ids'][0]
-        number = writer.builder.fignumbers.get(key, {}).get(id, ())
-        return '.'.join(map(str, number))
-    else:
+    if (
+        not writer.builder.config.math_numfig
+        or not writer.builder.config.numfig
+    ):
         return node['number']
+
+    figtype = 'displaymath'
+    if writer.builder.name == 'singlehtml':
+        key = "%s/%s" % (writer.docnames[-1], figtype)
+    else:
+        key = figtype
+
+    id = node['ids'][0]
+    number = writer.builder.fignumbers.get(key, {}).get(id, ())
+    return '.'.join(map(str, number))
 
 
 def wrap_displaymath(text: str, label: str, numbering: bool) -> str:

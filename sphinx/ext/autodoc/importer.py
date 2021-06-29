@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import importlib
 import traceback
 import warnings
@@ -17,10 +18,6 @@ from sphinx.deprecation import RemovedInSphinx40Warning, deprecated_alias
 from sphinx.pycode import ModuleAnalyzer
 from sphinx.util import logging
 from sphinx.util.inspect import isclass, isenumclass, safe_getattr
-
-if False:
-    # For type annotation
-    from typing import Type  # NOQA
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +40,11 @@ def unmangle(subject: Any, name: str) -> Optional[str]:
             prefix = "_%s__" % subject.__name__
             if name.startswith(prefix):
                 return name.replace(prefix, "__", 1)
-            else:
-                for cls in subject.__mro__:
-                    prefix = "_%s__" % cls.__name__
-                    if name.startswith(prefix):
-                        # mangled attribute defined in parent class
-                        return None
+            for cls in subject.__mro__:
+                prefix = "_%s__" % cls.__name__
+                if name.startswith(prefix):
+                    # mangled attribute defined in parent class
+                    return None
     except AttributeError:
         pass
 
@@ -89,13 +85,12 @@ def import_object(modname: str, objpath: List[str], objtype: str = '',
             except ImportError as exc:
                 logger.debug('[autodoc] import %s => failed', modname)
                 exc_on_importing = exc
-                if '.' in modname:
-                    # retry with parent module
-                    modname, name = modname.rsplit('.', 1)
-                    objpath.insert(0, name)
-                else:
+                if '.' not in modname:
                     raise
 
+                # retry with parent module
+                modname, name = modname.rsplit('.', 1)
+                objpath.insert(0, name)
         obj = module
         parent = None
         object_name = None

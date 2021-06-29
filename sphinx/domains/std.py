@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import re
 import unicodedata
 import warnings
@@ -32,13 +33,6 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import clean_astext, make_id, make_refnode
 from sphinx.util.typing import RoleFunction
 
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.application import Sphinx
-    from sphinx.builders import Builder
-    from sphinx.environment import BuildEnvironment
-
 logger = logging.getLogger(__name__)
 
 
@@ -57,13 +51,11 @@ class GenericObject(ObjectDescription):
 
     def handle_signature(self, sig: str, signode: desc_signature) -> str:
         if self.parse_node:
-            name = self.parse_node(self.env, sig, signode)
-        else:
-            signode.clear()
-            signode += addnodes.desc_name(sig, sig)
+            return self.parse_node(self.env, sig, signode)
+        signode.clear()
+        signode += addnodes.desc_name(sig, sig)
             # normalize whitespace like XRefRole does
-            name = ws_re.sub(' ', sig)
-        return name
+        return ws_re.sub(' ', sig)
 
     def add_target_and_index(self, name: str, sig: str, signode: desc_signature) -> None:
         node_id = make_id(self.env, self.state.document, self.objtype, name)
@@ -281,9 +273,7 @@ class OptionXRefRole(XRefRole):
 
 
 def split_term_classifiers(line: str) -> List[Optional[str]]:
-    # split line into a term and classifiers. if no classifier, None is used..
-    parts = re.split(' +: +', line) + [None]
-    return parts
+    return re.split(' +: +', line) + [None]
 
 
 def make_glossary_term(env: "BuildEnvironment", textnodes: Iterable[Node], index_key: str,
@@ -394,9 +384,7 @@ class Glossary(SphinxDirective):
                         messages.append(self.state.reporter.warning(
                             _('glossary seems to be misformatted, check indentation'),
                             source=source, line=lineno))
-            elif in_comment:
-                pass
-            else:
+            elif not in_comment:
                 if not in_definition:
                     # first line of definition, determines indentation
                     in_definition = True
@@ -908,14 +896,13 @@ class StandardDomain(Domain):
         docname = docname_join(refdoc, node['reftarget'])
         if docname not in env.all_docs:
             return None
+        if node['refexplicit']:
+            # reference with explicit title
+            caption = node.astext()
         else:
-            if node['refexplicit']:
-                # reference with explicit title
-                caption = node.astext()
-            else:
-                caption = clean_astext(env.titles[docname])
-            innernode = nodes.inline(caption, caption, classes=['doc'])
-            return make_refnode(builder, fromdocname, docname, None, innernode)
+            caption = clean_astext(env.titles[docname])
+        innernode = nodes.inline(caption, caption, classes=['doc'])
+        return make_refnode(builder, fromdocname, docname, None, innernode)
 
     def _resolve_option_xref(self, env: "BuildEnvironment", fromdocname: str,
                              builder: "Builder", typ: str, target: str,
@@ -946,20 +933,19 @@ class StandardDomain(Domain):
                                         target, node, contnode)
         if result:
             return result
+        for objtype, term in self.objects:
+            if objtype == 'term' and term.lower() == target.lower():
+                docname, labelid = self.objects[objtype, term]
+                logger.warning(__('term %s not found in case sensitive match.'
+                                  'made a reference to %s instead.'),
+                               target, term, location=node, type='ref', subtype='term')
+                break
         else:
-            for objtype, term in self.objects:
-                if objtype == 'term' and term.lower() == target.lower():
-                    docname, labelid = self.objects[objtype, term]
-                    logger.warning(__('term %s not found in case sensitive match.'
-                                      'made a reference to %s instead.'),
-                                   target, term, location=node, type='ref', subtype='term')
-                    break
-            else:
-                docname, labelid = '', ''
-            if not docname:
-                return None
-            return make_refnode(builder, fromdocname, docname,
-                                labelid, contnode)
+            docname, labelid = '', ''
+        if not docname:
+            return None
+        return make_refnode(builder, fromdocname, docname,
+                            labelid, contnode)
 
     def _resolve_obj_xref(self, env: "BuildEnvironment", fromdocname: str,
                           builder: "Builder", typ: str, target: str,
@@ -1034,10 +1020,9 @@ class StandardDomain(Domain):
             _, title_getter = self.enumerable_nodes.get(elem.__class__, (None, None))
             if title_getter:
                 return title_getter(elem)
-            else:
-                for subnode in elem:
-                    if isinstance(subnode, (nodes.caption, nodes.title)):
-                        return clean_astext(subnode)
+            for subnode in elem:
+                if isinstance(subnode, (nodes.caption, nodes.title)):
+                    return clean_astext(subnode)
 
         return None
 
@@ -1081,16 +1066,15 @@ class StandardDomain(Domain):
                 raise ValueError from exc
 
     def get_full_qualified_name(self, node: Element) -> str:
-        if node.get('reftype') == 'option':
-            progname = node.get('std:program')
-            command = ws_re.split(node.get('reftarget'))
-            if progname:
-                command.insert(0, progname)
-            option = command.pop()
-            if command:
-                return '.'.join(['-'.join(command), option])
-            else:
-                return None
+        if node.get('reftype') != 'option':
+            return None
+        progname = node.get('std:program')
+        command = ws_re.split(node.get('reftarget'))
+        if progname:
+            command.insert(0, progname)
+        option = command.pop()
+        if command:
+            return '.'.join(['-'.join(command), option])
         else:
             return None
 

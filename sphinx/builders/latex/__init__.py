@@ -360,8 +360,6 @@ class LaTeXBuilder(Builder):
                     newnodes.append(nodes.emphasis(title, title))
                     newnodes.append(nodes.Text(')', ')'))
                     break
-            else:
-                pass
             pendingnode.replace_self(newnodes)
         return largetree
 
@@ -537,15 +535,15 @@ def default_latex_engine(config: Config) -> str:
 
 def default_latex_docclass(config: Config) -> Dict[str, str]:
     """ Better default latex_docclass settings for specific languages. """
-    if config.language == 'ja':
-        if config.latex_engine == 'uplatex':
-            return {'manual': 'ujbook',
-                    'howto': 'ujreport'}
-        else:
-            return {'manual': 'jsbook',
-                    'howto': 'jreport'}
-    else:
+    if config.language != 'ja':
         return {}
+
+    if config.latex_engine == 'uplatex':
+        return {'manual': 'ujbook',
+                'howto': 'ujreport'}
+    else:
+        return {'manual': 'jsbook',
+                'howto': 'jreport'}
 
 
 def default_latex_use_xindy(config: Config) -> bool:

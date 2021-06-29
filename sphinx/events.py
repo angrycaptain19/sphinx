@@ -10,6 +10,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import warnings
 from collections import defaultdict
 from operator import attrgetter
@@ -19,12 +20,6 @@ from sphinx.deprecation import RemovedInSphinx40Warning
 from sphinx.errors import ExtensionError, SphinxError
 from sphinx.locale import __
 from sphinx.util import logging
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.application import Sphinx
-
 
 logger = logging.getLogger(__name__)
 

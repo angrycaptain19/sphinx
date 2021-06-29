@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 from typing import Any, Dict, Iterable, List, Tuple
 
 from docutils import nodes
@@ -21,11 +22,6 @@ from sphinx.util import logging
 from sphinx.util import split_index_msg
 from sphinx.util.docutils import ReferenceRole, SphinxDirective
 from sphinx.util.nodes import process_index_entry
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
-
 
 logger = logging.getLogger(__name__)
 
@@ -100,14 +96,12 @@ class IndexRole(ReferenceRole):
             # if an explicit target is given, process it as a full entry
             title = self.title
             entries = process_index_entry(self.target, target_id)
+        elif self.target.startswith('!'):
+            title = self.title[1:]
+            entries = [('single', self.target[1:], target_id, 'main', None)]
         else:
-            # otherwise we just create a single entry
-            if self.target.startswith('!'):
-                title = self.title[1:]
-                entries = [('single', self.target[1:], target_id, 'main', None)]
-            else:
-                title = self.title
-                entries = [('single', self.target, target_id, '', None)]
+            title = self.title
+            entries = [('single', self.target, target_id, '', None)]
 
         index = addnodes.index(entries=entries)
         target = nodes.target('', '', ids=[target_id])

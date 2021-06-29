@@ -7,6 +7,7 @@
     :copyright: Copyright 2007-2020 by the Sphinx team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
+
 import html
 import pickle
 import re
@@ -24,10 +25,6 @@ from sphinx.deprecation import RemovedInSphinx40Warning
 from sphinx.environment import BuildEnvironment
 from sphinx.search.jssplitter import splitter_code
 from sphinx.util import jsdump
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
 
 
 class SearchLanguage:
@@ -207,11 +204,8 @@ class WordCollector(nodes.NodeVisitor):
 
         if isinstance(node, addnodes.meta) and node.get('name') == 'keywords':
             meta_lang = node.get('lang')
-            if meta_lang is None:  # lang not specified
+            if meta_lang is None or meta_lang == self.lang.lang:  # lang not specified
                 return True
-            elif meta_lang == self.lang.lang:  # matched to html_search_language
-                return True
-
         return False
 
     def dispatch_visit(self, node: Node) -> None:
@@ -301,13 +295,10 @@ class IndexBuilder:
         self._titles = dict(zip(index2fn, frozen['titles']))  # type: ignore
 
         def load_terms(mapping: Dict[str, Any]) -> Dict[str, Set[str]]:
-            rv = {}
-            for k, v in mapping.items():
-                if isinstance(v, int):
-                    rv[k] = {index2fn[v]}
-                else:
-                    rv[k] = {index2fn[i] for i in v}
-            return rv
+            return {
+                k: {index2fn[v]} if isinstance(v, int) else {index2fn[i] for i in v}
+                for k, v in mapping.items()
+            }
 
         self._mapping = load_terms(frozen['terms'])
         self._title_mapping = load_terms(frozen['titleterms'])

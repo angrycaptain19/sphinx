@@ -252,12 +252,10 @@ class ManualPageTranslator(SphinxTranslator, BaseTranslator):
 
     def visit_productionlist(self, node: Element) -> None:
         self.ensure_eol()
-        names = []
         self.in_productionlist += 1
         self.body.append('.sp\n.nf\n')
         productionlist = cast(Iterable[addnodes.production], node)
-        for production in productionlist:
-            names.append(production['tokenname'])
+        names = [production['tokenname'] for production in productionlist]
         maxlen = max(len(name) for name in names)
         lastname = None
         for production in productionlist:
@@ -297,17 +295,22 @@ class ManualPageTranslator(SphinxTranslator, BaseTranslator):
         self.body.append(self.defs['reference'][1])
 
         uri = node.get('refuri', '')
-        if uri.startswith('mailto:') or uri.startswith('http:') or \
-           uri.startswith('https:') or uri.startswith('ftp:'):
-            # if configured, put the URL after the link
-            if self.builder.config.man_show_urls and \
-               node.astext() != uri:
-                if uri.startswith('mailto:'):
-                    uri = uri[7:]
-                self.body.extend([
-                    ' <',
-                    self.defs['strong'][0], uri, self.defs['strong'][1],
-                    '>'])
+        if (
+            (
+                uri.startswith('mailto:')
+                or uri.startswith('http:')
+                or uri.startswith('https:')
+                or uri.startswith('ftp:')
+            )
+            and self.builder.config.man_show_urls
+            and node.astext() != uri
+        ):
+            if uri.startswith('mailto:'):
+                uri = uri[7:]
+            self.body.extend([
+                ' <',
+                self.defs['strong'][0], uri, self.defs['strong'][1],
+                '>'])
         raise nodes.SkipNode
 
     def visit_number_reference(self, node: Element) -> None:

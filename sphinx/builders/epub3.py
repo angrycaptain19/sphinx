@@ -120,8 +120,7 @@ class Epub3Builder(_epub_base.EpubBuilder):
         The difference from build_navpoints method is templates which are used
         when generating navigation documents.
         """
-        navstack = []  # type: List[NavPoint]
-        navstack.append(NavPoint('', '', []))
+        navstack = [NavPoint('', '', [])]
         level = 0
         for node in navnodes:
             if not node['text']:
@@ -156,8 +155,7 @@ class Epub3Builder(_epub_base.EpubBuilder):
         """Create a dictionary with all metadata for the nav.xhtml file
         properly escaped.
         """
-        metadata = {}  # type: Dict
-        metadata['lang'] = html.escape(self.config.epub_language)
+        metadata = {'lang': html.escape(self.config.epub_language)}
         metadata['toc_locale'] = html.escape(self.guide_titles['toc'])
         metadata['navlist'] = navlist
         return metadata

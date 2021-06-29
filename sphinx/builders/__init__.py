@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import pickle
 import time
 from os import path
@@ -41,12 +42,6 @@ try:
     import multiprocessing
 except ImportError:
     multiprocessing = None
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.application import Sphinx
-
 
 logger = logging.getLogger(__name__)
 
@@ -298,7 +293,7 @@ class Builder:
                        summary=__('targets for %d source files that are out of date') %
                        len(to_build))
 
-    def build(self, docnames: Iterable[str], summary: str = None, method: str = 'update') -> None:  # NOQA
+    def build(self, docnames: Iterable[str], summary: str = None, method: str = 'update') -> None:    # NOQA
         """Main build method.
 
         First updates the environment, and then calls :meth:`write`.
@@ -331,10 +326,9 @@ class Builder:
             self.app.phase = BuildPhase.CONSISTENCY_CHECK
             with progress_message(__('checking consistency')):
                 self.env.check_consistency()
-        else:
-            if method == 'update' and not docnames:
-                logger.info(bold(__('no targets are out of date.')))
-                return
+        elif method == 'update' and not docnames:
+            logger.info(bold(__('no targets are out of date.')))
+            return
 
         self.app.phase = BuildPhase.RESOLVING
 

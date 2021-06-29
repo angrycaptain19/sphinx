@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import os
 import pickle
 import warnings
@@ -35,12 +36,6 @@ from sphinx.util import logging
 from sphinx.util.docutils import LoggingReporter
 from sphinx.util.i18n import CatalogRepository, docname_to_domain
 from sphinx.util.nodes import is_translatable
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
-    from sphinx.builders import Builder
-
 
 logger = logging.getLogger(__name__)
 
@@ -274,9 +269,9 @@ class BuildEnvironment:
         condition = None  # type: Union[bool, Callable]
         if callable(method):
             condition = method
+        elif method not in versioning_conditions:
+            raise ValueError('invalid versioning method: %r' % method)
         else:
-            if method not in versioning_conditions:
-                raise ValueError('invalid versioning method: %r' % method)
             condition = versioning_conditions[method]
 
         if self.versioning_condition not in (None, condition):

@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import logging
 import logging.handlers
 from collections import defaultdict
@@ -20,12 +21,6 @@ from docutils.utils import get_source_line
 
 from sphinx.errors import SphinxWarning
 from sphinx.util.console import colorize
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.application import Sphinx
-
 
 NAMESPACE = 'sphinx'
 VERBOSE = 15
@@ -267,7 +262,7 @@ def skip_warningiserror(skip: bool = True) -> Generator[None, None, None]:
     """contextmanager to skip WarningIsErrorFilter for a while."""
     logger = logging.getLogger(NAMESPACE)
 
-    if skip is False:
+    if not skip:
         yield
     else:
         try:
@@ -344,10 +339,7 @@ class InfoFilter(logging.Filter):
     """Filter error and warning messages."""
 
     def filter(self, record: logging.LogRecord) -> bool:
-        if record.levelno < logging.WARNING:
-            return True
-        else:
-            return False
+        return record.levelno < logging.WARNING
 
 
 def is_suppressed_warning(type: str, subtype: str, suppress_warnings: List[str]) -> bool:
@@ -361,10 +353,15 @@ def is_suppressed_warning(type: str, subtype: str, suppress_warnings: List[str])
         else:
             target, subtarget = warning_type, None
 
-        if target == type:
-            if (subtype is None or subtarget is None or
-               subtarget == subtype or subtarget == '*'):
-                return True
+        if target == type and (
+            (
+                subtype is None
+                or subtarget is None
+                or subtarget == subtype
+                or subtarget == '*'
+            )
+        ):
+            return True
 
     return False
 
@@ -388,9 +385,8 @@ class WarningSuppressor(logging.Filter):
 
         if is_suppressed_warning(type, subtype, suppress_warnings):
             return False
-        else:
-            self.app._warncount += 1
-            return True
+        self.app._warncount += 1
+        return True
 
 
 class WarningIsErrorFilter(logging.Filter):
@@ -401,26 +397,26 @@ class WarningIsErrorFilter(logging.Filter):
         super().__init__()
 
     def filter(self, record: logging.LogRecord) -> bool:
-        if getattr(record, 'skip_warningsiserror', False):
+        if (
+            getattr(record, 'skip_warningsiserror', False)
+            or not self.app.warningiserror
+        ):
             # disabled by DisableWarningIsErrorFilter
             return True
-        elif self.app.warningiserror:
-            location = getattr(record, 'location', '')
-            try:
-                message = record.msg % record.args
-            except (TypeError, ValueError):
-                message = record.msg  # use record.msg itself
+        location = getattr(record, 'location', '')
+        try:
+            message = record.msg % record.args
+        except (TypeError, ValueError):
+            message = record.msg  # use record.msg itself
 
-            if location:
-                exc = SphinxWarning(location + ":" + str(message))
-            else:
-                exc = SphinxWarning(message)
-            if record.exc_info is not None:
-                raise exc from record.exc_info[1]
-            else:
-                raise exc
+        if location:
+            exc = SphinxWarning(location + ":" + str(message))
         else:
-            return True
+            exc = SphinxWarning(message)
+        if record.exc_info is not None:
+            raise exc from record.exc_info[1]
+        else:
+            raise exc
 
 
 class DisableWarningIsErrorFilter(logging.Filter):
@@ -453,15 +449,14 @@ class OnceFilter(logging.Filter):
 
     def filter(self, record: logging.LogRecord) -> bool:
         once = getattr(record, 'once', '')
-        if not once:
-            return True
-        else:
+        if once:
             params = self.messages.setdefault(record.msg, [])
             if record.args in params:
                 return False
 
             params.append(record.args)
-            return True
+
+        return True
 
 
 class SphinxLogRecordTranslator(logging.Filter):

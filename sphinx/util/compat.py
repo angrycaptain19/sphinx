@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import sys
 import warnings
 from typing import Any, Dict
@@ -17,10 +18,6 @@ from docutils.utils import get_source_line
 from sphinx import addnodes
 from sphinx.deprecation import RemovedInSphinx40Warning
 from sphinx.transforms import SphinxTransform
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
 
 
 def register_application_for_autosummary(app: "Sphinx") -> None:

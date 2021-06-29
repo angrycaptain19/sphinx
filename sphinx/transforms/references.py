@@ -8,16 +8,13 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 from typing import Any, Dict
 
 from docutils import nodes
 from docutils.transforms.references import DanglingReferences, Substitutions
 
 from sphinx.transforms import SphinxTransform
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
 
 
 class SubstitutionDefinitionsRemover(SphinxTransform):

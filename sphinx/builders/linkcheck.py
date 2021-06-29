@@ -105,7 +105,7 @@ class CheckExternalLinksBuilder(Builder):
         self.wqueue = queue.Queue()  # type: queue.Queue
         self.rqueue = queue.Queue()  # type: queue.Queue
         self.workers = []  # type: List[threading.Thread]
-        for i in range(self.app.config.linkcheck_workers):
+        for _ in range(self.app.config.linkcheck_workers):
             thread = threading.Thread(target=self.check_thread)
             thread.setDaemon(True)
             thread.start()
@@ -200,16 +200,15 @@ class CheckExternalLinksBuilder(Builder):
                     return 'broken', str(err), 0
             if response.url.rstrip('/') == req_url.rstrip('/'):
                 return 'working', '', 0
-            else:
-                new_url = response.url
-                if anchor:
-                    new_url += '#' + anchor
+            new_url = response.url
+            if anchor:
+                new_url += '#' + anchor
                 # history contains any redirects, get last
-                if response.history:
-                    code = response.history[-1].status_code
-                    return 'redirected', new_url, code
-                else:
-                    return 'redirected', new_url, 0
+            if not response.history:
+                return 'redirected', new_url, 0
+
+            code = response.history[-1].status_code
+            return 'redirected', new_url, code
 
         def check(docname: str) -> Tuple[str, str, int]:
             # check for various conditions without bothering the network
@@ -219,16 +218,14 @@ class CheckExternalLinksBuilder(Builder):
                 if uri_re.match(uri):
                     # non supported URI schemes (ex. ftp)
                     return 'unchecked', '', 0
+                srcdir = path.dirname(self.env.doc2path(docname))
+                if path.exists(path.join(srcdir, uri)):
+                    return 'working', '', 0
+                for rex in self.to_ignore:
+                    if rex.match(uri):
+                        return 'ignored', '', 0
                 else:
-                    srcdir = path.dirname(self.env.doc2path(docname))
-                    if path.exists(path.join(srcdir, uri)):
-                        return 'working', '', 0
-                    else:
-                        for rex in self.to_ignore:
-                            if rex.match(uri):
-                                return 'ignored', '', 0
-                        else:
-                            return 'broken', '', 0
+                    return 'broken', '', 0
             elif uri in self.good:
                 return 'working', 'old', 0
             elif uri in self.broken:
@@ -344,11 +341,8 @@ class CheckExternalLinksBuilder(Builder):
                 self.wqueue.put((uri, docname, lineno), False)
                 n += 1
 
-        done = 0
-        while done < n:
+        for _ in range(n):
             self.process_result(self.rqueue.get())
-            done += 1
-
         if self.broken:
             self.app.statuscode = 1
 

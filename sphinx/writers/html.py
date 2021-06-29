@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import copy
 import os
 import posixpath
@@ -28,11 +29,6 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxTranslator
 from sphinx.util.images import get_image_size
 
-if False:
-    # For type annotation
-    from sphinx.builders.html import StandaloneHTMLBuilder
-
-
 logger = logging.getLogger(__name__)
 
 # A good overview of the purpose behind these classes can be found here:
@@ -42,14 +38,11 @@ logger = logging.getLogger(__name__)
 def multiply_length(length: str, scale: int) -> str:
     """Multiply *length* (width or height) by *scale*."""
     matched = re.match(r'^(\d*\.?\d*)\s*(\S*)$', length)
-    if not matched:
+    if not matched or scale == 100:
         return length
-    elif scale == 100:
-        return length
-    else:
-        amount, unit = matched.groups()
-        result = float(amount) * scale / 100
-        return "%s%s" % (int(result), unit)
+    amount, unit = matched.groups()
+    result = float(amount) * scale / 100
+    return "%s%s" % (int(result), unit)
 
 
 class HTMLWriter(Writer):
@@ -173,8 +166,10 @@ class HTMLTranslator(SphinxTranslator, BaseTranslator):
         self.first_param = 1
         self.optional_param_level = 0
         # How many required parameters are left.
-        self.required_params_left = sum([isinstance(c, addnodes.desc_parameter)
-                                         for c in node.children])
+        self.required_params_left = sum(
+            isinstance(c, addnodes.desc_parameter) for c in node.children
+        )
+
         self.param_separator = node.child_text_separator
 
     def depart_desc_parameterlist(self, node: Element) -> None:
@@ -393,11 +388,7 @@ class HTMLTranslator(SphinxTranslator, BaseTranslator):
     # overwritten
     def depart_term(self, node: Element) -> None:
         next_node = node.next_node(descend=False, siblings=True)  # type: Node
-        if isinstance(next_node, nodes.classifier):
-            # Leave the end tag to `self.depart_classifier()`, in case
-            # there's a classifier.
-            pass
-        else:
+        if not isinstance(next_node, nodes.classifier):
             self.body.append('</dt>')
 
     # overwritten
@@ -510,10 +501,8 @@ class HTMLTranslator(SphinxTranslator, BaseTranslator):
 
     def visit_productionlist(self, node: Element) -> None:
         self.body.append(self.starttag(node, 'pre'))
-        names = []
         productionlist = cast(Iterable[addnodes.production], node)
-        for production in productionlist:
-            names.append(production['tokenname'])
+        names = [production['tokenname'] for production in productionlist]
         maxlen = max(len(name) for name in names)
         lastname = None
         for production in productionlist:
@@ -565,20 +554,22 @@ class HTMLTranslator(SphinxTranslator, BaseTranslator):
         atts = {'class': 'reference download',
                 'download': ''}
 
-        if not self.builder.download_support:
+        if (
+            not self.builder.download_support
+            or 'refuri' not in node
+            and 'filename' not in node
+        ):
             self.context.append('')
         elif 'refuri' in node:
             atts['class'] += ' external'
             atts['href'] = node['refuri']
             self.body.append(self.starttag(node, 'a', '', **atts))
             self.context.append('</a>')
-        elif 'filename' in node:
+        else:
             atts['class'] += ' internal'
             atts['href'] = posixpath.join(self.builder.dlpath, node['filename'])
             self.body.append(self.starttag(node, 'a', '', **atts))
             self.context.append('</a>')
-        else:
-            self.context.append('')
 
     def depart_download_reference(self, node: Element) -> None:
         self.body.append(self.context.pop())
@@ -591,20 +582,16 @@ class HTMLTranslator(SphinxTranslator, BaseTranslator):
             node['uri'] = posixpath.join(self.builder.imgpath,
                                          self.builder.images[olduri])
 
-        if 'scale' in node:
-            # Try to figure out image height and width.  Docutils does that too,
-            # but it tries the final file name, which does not necessarily exist
-            # yet at the time the HTML file is written.
-            if not ('width' in node and 'height' in node):
-                size = get_image_size(os.path.join(self.builder.srcdir, olduri))
-                if size is None:
-                    logger.warning(__('Could not obtain image size. :scale: option is ignored.'),  # NOQA
-                                   location=node)
-                else:
-                    if 'width' not in node:
-                        node['width'] = str(size[0])
-                    if 'height' not in node:
-                        node['height'] = str(size[1])
+        if 'scale' in node and ('width' not in node or 'height' not in node):
+            size = get_image_size(os.path.join(self.builder.srcdir, olduri))
+            if size is None:
+                logger.warning(__('Could not obtain image size. :scale: option is ignored.'),  # NOQA
+                               location=node)
+            else:
+                if 'width' not in node:
+                    node['width'] = str(size[0])
+                if 'height' not in node:
+                    node['height'] = str(size[1])
 
         uri = node['uri']
         if uri.lower().endswith(('svg', 'svgz')):
@@ -628,9 +615,7 @@ class HTMLTranslator(SphinxTranslator, BaseTranslator):
 
     # overwritten
     def depart_image(self, node: Element) -> None:
-        if node['uri'].lower().endswith(('svg', 'svgz')):
-            pass
-        else:
+        if not node['uri'].lower().endswith(('svg', 'svgz')):
             super().depart_image(node)
 
     def visit_toctree(self, node: Element) -> None:

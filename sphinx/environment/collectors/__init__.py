@@ -8,15 +8,12 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 from typing import Dict, List, Set
 
 from docutils import nodes
 
 from sphinx.environment import BuildEnvironment
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
 
 
 class EnvironmentCollector:

@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import html
 import posixpath
 import re
@@ -47,11 +48,6 @@ from sphinx.util.matching import patmatch, Matcher, DOTFILES
 from sphinx.util.osutil import os_path, relative_uri, ensuredir, movefile, copyfile
 from sphinx.util.tags import Tags
 from sphinx.writers.html import HTMLWriter, HTMLTranslator
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-
 
 # HTML5 Writer is available or not
 if is_html5_writer_available():
@@ -331,19 +327,18 @@ class StandaloneHTMLBuilder(Builder):
         if name is not None:
             # use given name
             return name
+        # not given: choose a math_renderer from registered ones as possible
+        renderers = list(self.app.registry.html_inline_math_renderers)
+        if len(renderers) == 1:
+            # only default math_renderer (mathjax) is registered
+            return renderers[0]
+        elif len(renderers) == 2:
+            # default and another math_renderer are registered; prior the another
+            renderers.remove('mathjax')
+            return renderers[0]
         else:
-            # not given: choose a math_renderer from registered ones as possible
-            renderers = list(self.app.registry.html_inline_math_renderers)
-            if len(renderers) == 1:
-                # only default math_renderer (mathjax) is registered
-                return renderers[0]
-            elif len(renderers) == 2:
-                # default and another math_renderer are registered; prior the another
-                renderers.remove('mathjax')
-                return renderers[0]
-            else:
-                # many math_renderers are registered. can't choose automatically!
-                return None
+            # many math_renderers are registered. can't choose automatically!
+            return None
 
     def get_outdated_docs(self) -> Iterator[str]:
         try:
@@ -428,9 +423,11 @@ class StandaloneHTMLBuilder(Builder):
                 domain = self.env.domains[domain_name]
                 for indexcls in domain.indices:
                     indexname = '%s-%s' % (domain.name, indexcls.name)
-                    if isinstance(indices_config, list):
-                        if indexname not in indices_config:
-                            continue
+                    if (
+                        isinstance(indices_config, list)
+                        and indexname not in indices_config
+                    ):
+                        continue
                     content, collapse = indexcls(domain).generate()
                     if content:
                         self.domain_indices.append(
@@ -659,10 +656,10 @@ class StandaloneHTMLBuilder(Builder):
         # the total count of lines for each index letter, used to distribute
         # the entries into two columns
         genindex = IndexEntries(self.env).create_index(self)
-        indexcounts = []
-        for _k, entries in genindex:
-            indexcounts.append(sum(1 + len(subitems)
-                                   for _, (_, subitems, _) in entries))
+        indexcounts = [
+            sum(1 + len(subitems) for _, (_, subitems, _) in entries)
+            for _k, entries in genindex
+        ]
 
         genindexcontext = {
             'genindexentries': genindex,
@@ -834,7 +831,7 @@ class StandaloneHTMLBuilder(Builder):
 
         if self.config.html_scaled_image_link and self.html_scaled_image_link:
             for node in doctree.traverse(nodes.image):
-                if not any((key in node) for key in ['scale', 'width', 'height']):
+                if all(key not in node for key in ['scale', 'width', 'height']):
                     # resizing options are not given. scaled image link is available
                     # only for resized images.
                     continue

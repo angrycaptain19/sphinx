@@ -6,6 +6,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import sys
 import warnings
 from difflib import unified_diff
@@ -23,10 +24,6 @@ from sphinx.locale import __
 from sphinx.util import logging
 from sphinx.util import parselinenos
 from sphinx.util.docutils import SphinxDirective
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
 
 logger = logging.getLogger(__name__)
 
@@ -268,12 +265,11 @@ class LiteralIncludeReader:
             if pyobject not in tags:
                 raise ValueError(__('Object named %r not found in include file %r') %
                                  (pyobject, self.filename))
-            else:
-                start = tags[pyobject][1]
-                end = tags[pyobject][2]
-                lines = lines[start - 1:end]
-                if 'lineno-match' in self.options:
-                    self.lineno_start = start
+            start = tags[pyobject][1]
+            end = tags[pyobject][2]
+            lines = lines[start - 1:end]
+            if 'lineno-match' in self.options:
+                self.lineno_start = start
 
         return lines
 
@@ -347,11 +343,8 @@ class LiteralIncludeReader:
                 if end in line:
                     if inclusive:
                         return lines[:lineno + 1]
-                    else:
-                        if lineno == 0:
-                            pass  # end-before ignores first line
-                        else:
-                            return lines[:lineno]
+                    if lineno != 0:
+                        return lines[:lineno]
             if inclusive is True:
                 raise ValueError('end-at pattern not found: %s' % end)
             else:

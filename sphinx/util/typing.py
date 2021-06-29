@@ -114,11 +114,10 @@ def _stringify_py37(annotation: Any) -> str:
             pass
         elif qualname == 'Union':
             if len(annotation.__args__) > 1 and annotation.__args__[-1] is NoneType:
-                if len(annotation.__args__) > 2:
-                    args = ', '.join(stringify(a) for a in annotation.__args__[:-1])
-                    return 'Optional[Union[%s]]' % args
-                else:
+                if len(annotation.__args__) <= 2:
                     return 'Optional[%s]' % stringify(annotation.__args__[0])
+                args = ', '.join(stringify(a) for a in annotation.__args__[:-1])
+                return 'Optional[Union[%s]]' % args
             else:
                 args = ', '.join(stringify(a) for a in annotation.__args__)
                 return 'Union[%s]' % args
@@ -160,11 +159,10 @@ def _stringify_py36(annotation: Any) -> str:
     if (isinstance(annotation, typing.TupleMeta) and  # type: ignore
             not hasattr(annotation, '__tuple_params__')):  # for Python 3.6
         params = annotation.__args__
-        if params:
-            param_str = ', '.join(stringify(p) for p in params)
-            return '%s[%s]' % (qualname, param_str)
-        else:
+        if not params:
             return qualname
+        param_str = ', '.join(stringify(p) for p in params)
+        return '%s[%s]' % (qualname, param_str)
     elif isinstance(annotation, typing.GenericMeta):
         params = None
         if hasattr(annotation, '__args__'):
@@ -191,19 +189,17 @@ def _stringify_py36(annotation: Any) -> str:
         if params is not None:
             if len(params) == 2 and params[1] is NoneType:
                 return 'Optional[%s]' % stringify(params[0])
-            else:
-                param_str = ', '.join(stringify(p) for p in params)
-                return '%s[%s]' % (qualname, param_str)
+            param_str = ', '.join(stringify(p) for p in params)
+            return '%s[%s]' % (qualname, param_str)
     elif (hasattr(annotation, '__origin__') and
           annotation.__origin__ is typing.Union):  # for Python 3.5.2+
         params = annotation.__args__
         if params is not None:
             if len(params) > 1 and params[-1] is NoneType:
-                if len(params) > 2:
-                    param_str = ", ".join(stringify(p) for p in params[:-1])
-                    return 'Optional[Union[%s]]' % param_str
-                else:
+                if len(params) <= 2:
                     return 'Optional[%s]' % stringify(params[0])
+                param_str = ", ".join(stringify(p) for p in params[:-1])
+                return 'Optional[Union[%s]]' % param_str
             else:
                 param_str = ', '.join(stringify(p) for p in params)
                 return 'Union[%s]' % param_str
@@ -222,9 +218,9 @@ def _stringify_py36(annotation: Any) -> str:
         return '%s[%s, %s]' % (qualname,
                                args_str,
                                stringify(annotation.__result__))
-    elif (isinstance(annotation, typing.TupleMeta) and  # type: ignore
-          hasattr(annotation, '__tuple_params__') and
-          hasattr(annotation, '__tuple_use_ellipsis__')):  # for Python 3.5
+    elif isinstance(annotation, typing.TupleMeta) and hasattr(
+        annotation, '__tuple_use_ellipsis__'
+    ):  # for Python 3.5
         params = annotation.__tuple_params__
         if params is not None:
             param_strings = [stringify(p) for p in params]

@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import fnmatch
 import functools
 import hashlib
@@ -47,12 +48,6 @@ from sphinx.util.nodes import (   # noqa
     nested_parse_with_titles, split_explicit_title, explicit_title_re,
     caption_ref_re)
 from sphinx.util.matching import patfilter  # noqa
-
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.application import Sphinx
 
 
 logger = logging.getLogger(__name__)
@@ -439,23 +434,21 @@ def parselinenos(spec: str, total: int) -> List[int]:
     """Parse a line number spec (such as "1,2,4-6") and return a list of
     wanted line numbers.
     """
-    items = list()
+    items = []
     parts = spec.split(',')
     for part in parts:
         try:
             begend = part.strip().split('-')
-            if ['', ''] == begend:
+            if ['', ''] == begend or len(begend) not in [1, 2]:
                 raise ValueError
             elif len(begend) == 1:
                 items.append(int(begend[0]) - 1)
-            elif len(begend) == 2:
+            else:
                 start = int(begend[0] or 1)  # left half open (cf. -10)
                 end = int(begend[1] or max(start, total))  # right half open (cf. 10-)
                 if start > end:  # invalid range (cf. 10-1)
                     raise ValueError
                 items.extend(range(start - 1, end))
-            else:
-                raise ValueError
         except Exception as exc:
             raise ValueError('invalid line number spec: %r' % spec) from exc
 
@@ -468,11 +461,7 @@ def force_decode(string: str, encoding: str) -> str:
                   RemovedInSphinx40Warning, stacklevel=2)
     if isinstance(string, bytes):
         try:
-            if encoding:
-                string = string.decode(encoding)
-            else:
-                # try decoding with utf-8, should only work for real UTF-8
-                string = string.decode()
+            string = string.decode(encoding) if encoding else string.decode()
         except UnicodeError:
             # last resort -- can't fail
             string = string.decode('latin1')
@@ -507,7 +496,7 @@ def rpartition(s: str, t: str) -> Tuple[str, str]:
 def split_into(n: int, type: str, value: str) -> List[str]:
     """Split an index entry into a given number of parts at semicolons."""
     parts = [x.strip() for x in value.split(';', n - 1)]
-    if sum(1 for part in parts if part) < n:
+    if sum(bool(part) for part in parts) < n:
         raise ValueError('invalid %s index entry %r' % (type, value))
     return parts
 
@@ -635,7 +624,7 @@ def encode_uri(uri: str) -> str:
     split = list(urlsplit(uri))
     split[1] = split[1].encode('idna').decode('ascii')
     split[2] = quote_plus(split[2].encode(), '/')
-    query = list((q, v.encode()) for (q, v) in parse_qsl(split[3]))
+    query = [(q, v.encode()) for (q, v) in parse_qsl(split[3])]
     split[3] = urlencode(query)
     return urlunsplit(split)
 

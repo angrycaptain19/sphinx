@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import os
 from glob import glob
 
@@ -17,11 +18,6 @@ from sphinx.util import logging
 from sphinx.util import path_stabilize
 from sphinx.util.matching import compile_matchers
 from sphinx.util.osutil import SEP, relpath
-
-if False:
-    # For type annotation
-    from typing import Dict, List, Set  # NOQA
-
 
 logger = logging.getLogger(__name__)
 EXCLUDE_PATHS = ['**/_sources', '.#*', '**/.#*', '*.lproj/**']

@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import copy
 from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Tuple, Union
 from typing import cast
@@ -22,12 +23,6 @@ from sphinx.errors import SphinxError
 from sphinx.locale import _
 from sphinx.roles import XRefRole
 from sphinx.util.typing import RoleFunction
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.builders import Builder
-    from sphinx.environment import BuildEnvironment
 
 
 class ObjType:
@@ -242,11 +237,7 @@ class Domain:
     def add_object_type(self, name: str, objtype: ObjType) -> None:
         """Add an object type."""
         self.object_types[name] = objtype
-        if objtype.roles:
-            self._type2role[name] = objtype.roles[0]
-        else:
-            self._type2role[name] = ''
-
+        self._type2role[name] = objtype.roles[0] if objtype.roles else ''
         for role in objtype.roles:
             self._role2type.setdefault(role, []).append(name)
 

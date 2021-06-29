@@ -10,6 +10,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import os
 import pickle
 import platform
@@ -52,13 +53,6 @@ from sphinx.util.logging import prefixed_warnings
 from sphinx.util.osutil import abspath, ensuredir, relpath
 from sphinx.util.tags import Tags
 from sphinx.util.typing import RoleFunction, TitleGetter
-
-if False:
-    # For type annotation
-    from docutils.nodes import Node  # NOQA
-    from typing import Type  # for python3.5.1
-    from sphinx.builders import Builder
-
 
 builtin_extensions = (
     'sphinx.addnodes',
@@ -180,16 +174,10 @@ class Sphinx:
             self._status = status
             self.quiet = False
 
-        if warning is None:
-            self._warning = StringIO()     # type: IO
-        else:
-            self._warning = warning
+        self._warning = StringIO() if warning is None else warning
         self._warncount = 0
         self.keep_going = warningiserror and keep_going
-        if self.keep_going:
-            self.warningiserror = False
-        else:
-            self.warningiserror = warningiserror
+        self.warningiserror = False if self.keep_going else warningiserror
         logging.setup(self, self._status, self._warning)
 
         self.events = EventManager(self)
@@ -361,11 +349,10 @@ class Sphinx:
                         msg = __('build %s, %s warning (with warnings treated as errors).')
                     else:
                         msg = __('build %s, %s warnings (with warnings treated as errors).')
+                elif self._warncount == 1:
+                    msg = __('build %s, %s warning.')
                 else:
-                    if self._warncount == 1:
-                        msg = __('build %s, %s warning.')
-                    else:
-                        msg = __('build %s, %s warnings.')
+                    msg = __('build %s, %s warnings.')
 
                 logger.info(bold(msg % (status, self._warncount)))
             else:
@@ -960,12 +947,7 @@ class Sphinx:
                       'Please use app.add_css_file() instead.',
                       RemovedInSphinx40Warning, stacklevel=2)
 
-        attributes = {}  # type: Dict[str, str]
-        if alternate:
-            attributes['rel'] = 'alternate stylesheet'
-        else:
-            attributes['rel'] = 'stylesheet'
-
+        attributes = {'rel': 'alternate stylesheet' if alternate else 'stylesheet'}
         if title:
             attributes['title'] = title
 

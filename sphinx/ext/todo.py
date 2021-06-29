@@ -165,11 +165,7 @@ class TodoListProcessor:
                 node.parent.remove(node)
                 continue
 
-            if node.get('ids'):
-                content = [nodes.target()]  # type: List[Element]
-            else:
-                content = []
-
+            content = [nodes.target()] if node.get('ids') else []
             for todo in todos:
                 # Create a copy of the todo node
                 new_todo = todo.deepcopy()
@@ -228,11 +224,7 @@ def process_todo_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -
     todos = sum(domain.todos.values(), [])  # type: List[todo_node]
 
     for node in doctree.traverse(todolist):
-        if node.get('ids'):
-            content = [nodes.target()]  # type: List[Element]
-        else:
-            content = []
-
+        content = [nodes.target()] if node.get('ids') else []
         if not app.config['todo_include_todos']:
             node.replace_self(content)
             continue

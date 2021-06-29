@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import os
 import re
 from contextlib import contextmanager
@@ -33,14 +34,6 @@ from sphinx.util.typing import RoleFunction
 
 logger = logging.getLogger(__name__)
 report_re = re.compile('^(.+?:(?:\\d+)?): \\((DEBUG|INFO|WARNING|ERROR|SEVERE)/(\\d+)?\\) ')
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.builders import Builder
-    from sphinx.config import Config
-    from sphinx.environment import BuildEnvironment
-
 
 __version_info__ = tuple(LooseVersion(docutils.__version__).version)
 additional_nodes = set()  # type: Set[Type[nodes.Element]]

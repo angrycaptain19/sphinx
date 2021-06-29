@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 from codecs import open
 from collections import defaultdict, OrderedDict
 from datetime import datetime, tzinfo, timedelta
@@ -33,10 +34,6 @@ from sphinx.util.nodes import extract_messages, traverse_translatable_index
 from sphinx.util.osutil import ensuredir, canon_path, relpath
 from sphinx.util.tags import Tags
 from sphinx.util.template import SphinxRenderer
-
-if False:
-    # For type annotation
-    from typing import DefaultDict  # for python3.5.1
 
 logger = logging.getLogger(__name__)
 

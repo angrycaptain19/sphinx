@@ -242,14 +242,14 @@ class VariableCommentPicker(ast.NodeVisitor):
 
     def get_qualname_for(self, name: str) -> Optional[List[str]]:
         """Get qualified name for given object as a list of string."""
-        if self.current_function:
-            if self.current_classes and self.context[-1] == "__init__":
-                # store variable comments inside __init__ method of classes
-                return self.context[:-1] + [name]
-            else:
-                return None
-        else:
+        if not self.current_function:
             return self.context + [name]
+
+        if self.current_classes and self.context[-1] == "__init__":
+            # store variable comments inside __init__ method of classes
+            return self.context[:-1] + [name]
+        else:
+            return None
 
     def add_entry(self, name: str) -> None:
         qualname = self.get_qualname_for(name)
@@ -346,16 +346,17 @@ class VariableCommentPicker(ast.NodeVisitor):
         for name in node.names:
             self.add_entry(name.asname or name.name)
 
-            if node.module == 'typing' and name.name == 'final':
-                self.typing_final = name.asname or name.name
-            elif node.module == 'typing' and name.name == 'overload':
-                self.typing_overload = name.asname or name.name
+            if node.module == 'typing':
+                if name.name == 'final':
+                    self.typing_final = name.asname or name.name
+                elif name.name == 'overload':
+                    self.typing_overload = name.asname or name.name
 
     def visit_Assign(self, node: ast.Assign) -> None:
         """Handles Assign node and pick up a variable comment."""
         try:
             targets = get_assign_targets(node)
-            varnames = sum([get_lvar_names(t, self=self.get_self()) for t in targets], [])  # type: List[str]  # NOQA
+            varnames = sum((get_lvar_names(t, self=self.get_self()) for t in targets), [])
             current_line = self.get_line(node.lineno)
         except TypeError:
             return  # this assignment is not new definition!
@@ -445,18 +446,20 @@ class VariableCommentPicker(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Handles FunctionDef node and set context."""
-        if self.current_function is None:
-            self.add_entry(node.name)  # should be called before setting self.current_function
-            if self.is_final(node.decorator_list):
-                self.add_final_entry(node.name)
-            if self.is_overload(node.decorator_list):
-                self.add_overload_entry(node)
-            self.context.append(node.name)
-            self.current_function = node
-            for child in node.body:
-                self.visit(child)
-            self.context.pop()
-            self.current_function = None
+        if self.current_function is not None:
+            return
+
+        self.add_entry(node.name)  # should be called before setting self.current_function
+        if self.is_final(node.decorator_list):
+            self.add_final_entry(node.name)
+        if self.is_overload(node.decorator_list):
+            self.add_overload_entry(node)
+        self.context.append(node.name)
+        self.current_function = node
+        for child in node.body:
+            self.visit(child)
+        self.context.pop()
+        self.current_function = None
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         """Handles AsyncFunctionDef node and set context."""
@@ -477,10 +480,7 @@ class DefinitionFinder(TokenProcessor):
 
     def add_definition(self, name: str, entry: Tuple[str, int, int]) -> None:
         """Add a location of definition."""
-        if self.indents and self.indents[-1][0] == 'def' and entry[0] == 'def':
-            # ignore definition of inner function
-            pass
-        else:
+        if not self.indents or self.indents[-1][0] != 'def' or entry[0] != 'def':
             self.definitions[name] = entry
 
     def parse(self) -> None:

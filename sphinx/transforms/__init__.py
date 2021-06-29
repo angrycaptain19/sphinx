@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import re
 from typing import Any, Dict, Generator, List, Tuple
 
@@ -28,13 +29,6 @@ from sphinx.util import logging
 from sphinx.util.docutils import new_document
 from sphinx.util.i18n import format_date
 from sphinx.util.nodes import NodeMatcher, apply_source_workaround, is_smartquotable
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
-    from sphinx.domain.std import StandardDomain
-    from sphinx.environment import BuildEnvironment
-
 
 logger = logging.getLogger(__name__)
 
@@ -266,7 +260,10 @@ class UnreferencedFootnotesDetector(SphinxTransform):
                                location=node)
 
         for node in self.document.autofootnotes:
-            if not any(ref['auto'] == node['auto'] for ref in self.document.autofootnote_refs):
+            if all(
+                ref['auto'] != node['auto']
+                for ref in self.document.autofootnote_refs
+            ):
                 logger.warning(__('Footnote [#] is not referenced.'),
                                type='ref', subtype='footnote',
                                location=node)
@@ -337,19 +334,14 @@ class SphinxSmartQuotes(SmartQuotes, SphinxTransform):
         builders = self.config.smartquotes_excludes.get('builders', [])
         languages = self.config.smartquotes_excludes.get('languages', [])
 
-        if self.document.settings.smart_quotes is False:
+        if (
+            self.document.settings.smart_quotes is False
+            or self.config.smartquotes is False
+            or self.app.builder.name in builders
+            or self.config.language in languages
+        ):
             # disabled by 3rd party extension (workaround)
             return False
-        elif self.config.smartquotes is False:
-            # disabled by confval smartquotes
-            return False
-        elif self.app.builder.name in builders:
-            # disabled by confval smartquotes_excludes['builders']
-            return False
-        elif self.config.language in languages:
-            # disabled by confval smartquotes_excludes['languages']
-            return False
-
         # confirm selected language supports smart_quotes or not
         language = self.env.settings['language_code']
         for tag in normalize_language_tag(language):
@@ -388,10 +380,10 @@ class ManpageLink(SphinxTransform):
     default_priority = 999
 
     def apply(self, **kwargs: Any) -> None:
+        pattern = r'^(?P<path>(?P<page>.+)[\(\.](?P<section>[1-9]\w*)?\)?)$'  # noqa
         for node in self.document.traverse(addnodes.manpage):
-            manpage = ' '.join([str(x) for x in node.children
-                                if isinstance(x, nodes.Text)])
-            pattern = r'^(?P<path>(?P<page>.+)[\(\.](?P<section>[1-9]\w*)?\)?)$'  # noqa
+            manpage = ' '.join(str(x) for x in node.children
+                                        if isinstance(x, nodes.Text))
             info = {'path': manpage,
                     'page': manpage,
                     'section': ''}

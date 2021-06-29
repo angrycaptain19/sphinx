@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import warnings
 from typing import Any, Dict, Iterable, List, Tuple
 
@@ -23,12 +24,6 @@ from sphinx.locale import __
 from sphinx.roles import XRefRole
 from sphinx.util import logging
 from sphinx.util.nodes import make_refnode
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
-    from sphinx.builders import Builder
-
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +97,7 @@ class MathDomain(Domain):
     def resolve_xref(self, env: BuildEnvironment, fromdocname: str, builder: "Builder",
                      typ: str, target: str, node: pending_xref, contnode: Element
                      ) -> Element:
-        assert typ in ('eq', 'numref')
+        assert typ in {'eq', 'numref'}
         docname, number = self.equations.get(target, (None, None))
         if docname:
             # TODO: perhaps use rather a sphinx-core provided prefix here?

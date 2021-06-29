@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import re
 import warnings
 from typing import Any, Dict, List, Tuple
@@ -25,13 +26,6 @@ from sphinx.util.nodes import (
     split_explicit_title, process_index_entry, set_role_source_info
 )
 from sphinx.util.typing import RoleFunction
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.application import Sphinx
-    from sphinx.environment import BuildEnvironment
-
 
 generic_docroles = {
     'command': addnodes.literal_strong,
@@ -581,14 +575,12 @@ class Index(ReferenceRole):
             # if an explicit target is given, process it as a full entry
             title = self.title
             entries = process_index_entry(self.target, target_id)
+        elif self.target.startswith('!'):
+            title = self.title[1:]
+            entries = [('single', self.target[1:], target_id, 'main', None)]
         else:
-            # otherwise we just create a single entry
-            if self.target.startswith('!'):
-                title = self.title[1:]
-                entries = [('single', self.target[1:], target_id, 'main', None)]
-            else:
-                title = self.title
-                entries = [('single', self.target, target_id, '', None)]
+            title = self.title
+            entries = [('single', self.target, target_id, '', None)]
 
         index = addnodes.index(entries=entries)
         target = nodes.target('', '', ids=[target_id])

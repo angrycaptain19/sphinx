@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 from os import path
 from textwrap import indent
 from typing import Any, Dict, List, Tuple, TypeVar
@@ -28,12 +29,6 @@ from sphinx.util.nodes import (
     LITERAL_TYPE_NODES, IMAGE_TYPE_NODES, NodeMatcher,
     extract_messages, is_pending_meta, traverse_translatable_index,
 )
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.application import Sphinx
-
 
 logger = logging.getLogger(__name__)
 

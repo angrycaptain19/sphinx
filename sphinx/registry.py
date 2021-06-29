@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import traceback
 from importlib import import_module
 from types import MethodType
@@ -34,12 +35,6 @@ from sphinx.roles import XRefRole
 from sphinx.util import logging
 from sphinx.util.logging import prefixed_warnings
 from sphinx.util.typing import RoleFunction, TitleGetter
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.application import Sphinx
-    from sphinx.ext.autodoc import Documenter
 
 logger = logging.getLogger(__name__)
 

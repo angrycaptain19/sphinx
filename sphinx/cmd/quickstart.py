@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import argparse
 import locale
 import os
@@ -71,23 +72,19 @@ DEFAULTS = {
 
 PROMPT_PREFIX = '> '
 
-if sys.platform == 'win32':
-    # On Windows, show questions as bold because of color scheme of PowerShell (refs: #5294).
-    COLOR_QUESTION = 'bold'
-else:
-    COLOR_QUESTION = 'purple'
+COLOR_QUESTION = 'bold' if sys.platform == 'win32' else 'purple'
 
 
 # function to get input from terminal -- overridden by the test suite
 def term_input(prompt: str) -> str:
-    if sys.platform == 'win32':
-        # Important: On windows, readline is not enabled by default.  In these
-        #            environment, escape sequences have been broken.  To avoid the
-        #            problem, quickstart uses ``print()`` to show prompt.
-        print(prompt, end='')
-        return input('')
-    else:
+    if sys.platform != 'win32':
         return input(prompt)
+
+    # Important: On windows, readline is not enabled by default.  In these
+    #            environment, escape sequences have been broken.  To avoid the
+    #            problem, quickstart uses ``print()`` to show prompt.
+    print(prompt, end='')
+    return input('')
 
 
 class ValidationError(Exception):
@@ -126,7 +123,7 @@ def boolean(x: str) -> bool:
 
 
 def suffix(x: str) -> str:
-    if not (x[0:1] == '.' and len(x) > 1):
+    if x[0:1] != '.' or len(x) <= 1:
         raise ValidationError(__("Please enter a file suffix, e.g. '.rst' or '.txt'."))
     return x
 
@@ -165,12 +162,7 @@ def do_prompt(text: str, default: str = None, validator: Callable[[str], Any] = 
             prompt = PROMPT_PREFIX + '%s [%s]: ' % (text, default)
         else:
             prompt = PROMPT_PREFIX + text + ': '
-        if USE_LIBEDIT:
-            # Note: libedit has a problem for combination of ``input()`` and escape
-            # sequence (see #5335).  To avoid the problem, all prompts are not colored
-            # on libedit.
-            pass
-        else:
+        if not USE_LIBEDIT:
             prompt = colorize(COLOR_QUESTION, prompt, input_mode=True)
         x = term_input(prompt).strip()
         if default and not x:
@@ -383,9 +375,8 @@ def generate(d: Dict, overwrite: bool = True, silent: bool = False, templatedir:
                 print(__('Creating file %s.') % fpath)
             with open(fpath, 'wt', encoding='utf-8', newline=newline) as f:
                 f.write(content)
-        else:
-            if 'quiet' not in d:
-                print(__('File %s already exists, skipping.') % fpath)
+        elif 'quiet' not in d:
+            print(__('File %s already exists, skipping.') % fpath)
 
     conf_path = os.path.join(templatedir, 'conf.py_t') if templatedir else None
     if not conf_path or not path.isfile(conf_path):
@@ -459,10 +450,7 @@ def valid_dir(d: Dict) -> bool:
         d['dot'] + 'templates',
         d['master'] + d['suffix'],
     ]
-    if set(reserved_names) & set(os.listdir(dir)):
-        return False
-
-    return True
+    return not set(reserved_names) & set(os.listdir(dir))
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -574,11 +562,10 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
             d['extensions'].extend(ext.split(','))
 
     try:
-        if 'quiet' in d:
-            if not {'project', 'author'}.issubset(d):
-                print(__('"quiet" is specified, but any of "project" or '
-                         '"author" is not specified.'))
-                return 1
+        if 'quiet' in d and not {'project', 'author'}.issubset(d):
+            print(__('"quiet" is specified, but any of "project" or '
+                     '"author" is not specified.'))
+            return 1
 
         if {'quiet', 'project', 'author'}.issubset(d):
             # quiet mode with all required params satisfied, use default

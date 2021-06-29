@@ -157,10 +157,12 @@ def compile_math(latex: str, builder: Builder) -> str:
     # build latex command; old versions of latex don't have the
     # --output-directory option, so we have to manually chdir to the
     # temp dir to run it.
-    command = [builder.config.imgmath_latex, '--interaction=nonstopmode']
-    # add custom args from the config file
-    command.extend(builder.config.imgmath_latex_args)
-    command.append('math.tex')
+    command = [
+        builder.config.imgmath_latex,
+        '--interaction=nonstopmode',
+        *builder.config.imgmath_latex_args,
+        'math.tex',
+    ]
 
     try:
         subprocess.run(command, stdout=PIPE, stderr=PIPE, cwd=tempdir, check=True)
@@ -194,8 +196,16 @@ def convert_dvi_to_png(dvipath: str, builder: Builder) -> Tuple[str, int]:
     filename = path.join(tempdir, 'math.png')
 
     name = 'dvipng'
-    command = [builder.config.imgmath_dvipng, '-o', filename, '-T', 'tight', '-z9']
-    command.extend(builder.config.imgmath_dvipng_args)
+    command = [
+        builder.config.imgmath_dvipng,
+        '-o',
+        filename,
+        '-T',
+        'tight',
+        '-z9',
+        *builder.config.imgmath_dvipng_args,
+    ]
+
     if builder.config.imgmath_use_preview:
         command.append('--depth')
     command.append(dvipath)
@@ -220,9 +230,13 @@ def convert_dvi_to_svg(dvipath: str, builder: Builder) -> Tuple[str, int]:
     filename = path.join(tempdir, 'math.svg')
 
     name = 'dvisvgm'
-    command = [builder.config.imgmath_dvisvgm, '-o', filename]
-    command.extend(builder.config.imgmath_dvisvgm_args)
-    command.append(dvipath)
+    command = [
+        builder.config.imgmath_dvisvgm,
+        '-o',
+        filename,
+        *builder.config.imgmath_dvisvgm_args,
+        dvipath,
+    ]
 
     stdout, stderr = convert_dvi_to_image(command, name)
 

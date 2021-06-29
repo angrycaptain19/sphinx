@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import contextlib
 import errno
 import filecmp
@@ -27,10 +28,6 @@ try:
     from sphinx.testing.path import path as Path
 except ImportError:
     Path = None  # type: ignore
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
 
 # Errnos that we need.
 EEXIST = getattr(errno, 'EEXIST', 0)  # RemovedInSphinx40Warning
@@ -163,16 +160,15 @@ fs_encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
 def abspath(pathdir: str) -> str:
     if Path is not None and isinstance(pathdir, Path):
         return pathdir.abspath()
-    else:
-        pathdir = path.abspath(pathdir)
-        if isinstance(pathdir, bytes):
-            try:
-                pathdir = pathdir.decode(fs_encoding)
-            except UnicodeDecodeError as exc:
-                raise UnicodeDecodeError('multibyte filename not supported on '
-                                         'this filesystem encoding '
-                                         '(%r)' % fs_encoding) from exc
-        return pathdir
+    pathdir = path.abspath(pathdir)
+    if isinstance(pathdir, bytes):
+        try:
+            pathdir = pathdir.decode(fs_encoding)
+        except UnicodeDecodeError as exc:
+            raise UnicodeDecodeError('multibyte filename not supported on '
+                                     'this filesystem encoding '
+                                     '(%r)' % fs_encoding) from exc
+    return pathdir
 
 
 def getcwd() -> str:

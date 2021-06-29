@@ -6,6 +6,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 from typing import Any, Dict, List, Tuple
 from typing import cast
 
@@ -19,10 +20,6 @@ from sphinx.directives import optional_int
 from sphinx.domains.math import MathDomain
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import set_source_info
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
 
 
 class Figure(images.Figure):

@@ -195,20 +195,16 @@ def isstaticmethod(obj: Any, cls: Any = None, name: str = None) -> bool:
         for basecls in getattr(cls, '__mro__', [cls]):
             meth = basecls.__dict__.get(name)
             if meth:
-                if isinstance(meth, staticmethod):
-                    return True
-                else:
-                    return False
-
+                return isinstance(meth, staticmethod)
     return False
 
 
 def isdescriptor(x: Any) -> bool:
     """Check if the object is some kind of descriptor."""
-    for item in '__get__', '__set__', '__delete__':
-        if hasattr(safe_getattr(x, item, None), '__call__'):
-            return True
-    return False
+    return any(
+        hasattr(safe_getattr(x, item, None), '__call__')
+        for item in ('__get__', '__set__', '__delete__')
+    )
 
 
 def isabstractmethod(obj: Any) -> bool:
@@ -257,13 +253,10 @@ def isattributedescriptor(obj: Any) -> bool:
 
 def is_singledispatch_function(obj: Any) -> bool:
     """Check if the object is singledispatch function."""
-    if (inspect.isfunction(obj) and
+    return bool((inspect.isfunction(obj) and
             hasattr(obj, 'dispatch') and
             hasattr(obj, 'register') and
-            obj.dispatch.__module__ == 'functools'):
-        return True
-    else:
-        return False
+            obj.dispatch.__module__ == 'functools'))
 
 
 def is_singledispatch_method(obj: Any) -> bool:
@@ -294,12 +287,7 @@ def iscoroutinefunction(obj: Any) -> bool:
     """Check if the object is coroutine-function."""
     # unwrap staticmethod, classmethod and partial (except wrappers)
     obj = unwrap_all(obj, stop=lambda o: hasattr(o, '__wrapped__'))
-    if hasattr(obj, '__code__') and inspect.iscoroutinefunction(obj):
-        # check obj.__code__ because iscoroutinefunction() crashes for custom method-like
-        # objects (see https://github.com/sphinx-doc/sphinx/issues/6605)
-        return True
-    else:
-        return False
+    return bool(hasattr(obj, '__code__') and inspect.iscoroutinefunction(obj))
 
 
 def isproperty(obj: Any) -> bool:
@@ -430,13 +418,9 @@ def is_builtin_class_method(obj: Any, attr_name: str) -> bool:
 
 def _should_unwrap(subject: Callable) -> bool:
     """Check the function should be unwrapped on getting signature."""
-    if (safe_getattr(subject, '__globals__', None) and
+    return bool((safe_getattr(subject, '__globals__', None) and
             subject.__globals__.get('__name__') == 'contextlib' and  # type: ignore
-            subject.__globals__.get('__file__') == contextlib.__file__):  # type: ignore
-        # contextmanger should be unwrapped
-        return True
-
-    return False
+            subject.__globals__.get('__file__') == contextlib.__file__))
 
 
 def signature(subject: Callable, bound_method: bool = False, follow_wrapped: bool = False,
@@ -462,12 +446,11 @@ def signature(subject: Callable, bound_method: bool = False, follow_wrapped: boo
         # Until python 3.6.4, cpython has been crashed on inspection for
         # partialmethods not having any arguments.
         # https://bugs.python.org/issue33009
-        if hasattr(subject, '_partialmethod'):
-            parameters = []
-            return_annotation = Parameter.empty
-        else:
+        if not hasattr(subject, '_partialmethod'):
             raise
 
+        parameters = []
+        return_annotation = Parameter.empty
     try:
         # Update unresolved annotations using ``get_type_hints()``.
         annotations = typing.get_type_hints(subject, None, type_aliases)
@@ -481,14 +464,8 @@ def signature(subject: Callable, bound_method: bool = False, follow_wrapped: boo
         # ForwardRef and so on.
         pass
 
-    if bound_method:
-        if inspect.ismethod(subject):
-            # ``inspect.signature()`` considers the subject is a bound method and removes
-            # first argument from signature.  Therefore no skips are needed here.
-            pass
-        else:
-            if len(parameters) > 0:
-                parameters.pop(0)
+    if bound_method and not inspect.ismethod(subject) and parameters:
+        parameters.pop(0)
 
     # To allow to create signature object correctly for pure python functions,
     # pass an internal parameter __validate_parameters__=False to Signature
@@ -589,13 +566,14 @@ def stringify_signature(sig: inspect.Signature, show_annotation: bool = True,
         # PEP-570: Separator for Positional Only Parameter: /
         args.append('/')
 
-    if (sig.return_annotation is Parameter.empty or
-            show_annotation is False or
-            show_return_annotation is False):
+    if (
+        sig.return_annotation is Parameter.empty
+        or not show_annotation
+        or not show_return_annotation
+    ):
         return '(%s)' % ', '.join(args)
-    else:
-        annotation = stringify_annotation(sig.return_annotation)
-        return '(%s) -> %s' % (', '.join(args), annotation)
+    annotation = stringify_annotation(sig.return_annotation)
+    return '(%s) -> %s' % (', '.join(args), annotation)
 
 
 def signature_from_str(signature: str) -> inspect.Signature:
@@ -705,18 +683,12 @@ class Signature:
             # we try to build annotations from argspec.
             self.annotations = {}
 
-        if bound_method:
-            # client gives a hint that the subject is a bound method
-
-            if inspect.ismethod(subject):
-                # inspect.signature already considers the subject is bound method.
-                # So it is not need to skip first argument.
-                self.skip_first_argument = False
-            else:
-                self.skip_first_argument = True
-        else:
-            # inspect.signature recognizes type of method properly without any hints
+        if bound_method and inspect.ismethod(subject) or not bound_method:
+            # inspect.signature already considers the subject is bound method.
+            # So it is not need to skip first argument.
             self.skip_first_argument = False
+        else:
+            self.skip_first_argument = True
 
     @property
     def parameters(self) -> Mapping:
@@ -727,13 +699,13 @@ class Signature:
 
     @property
     def return_annotation(self) -> Any:
-        if self.signature:
-            if self.has_retval:
-                return self.signature.return_annotation
-            else:
-                return Parameter.empty
-        else:
+        if not self.signature:
             return None
+
+        if self.has_retval:
+            return self.signature.return_annotation
+        else:
+            return Parameter.empty
 
     def format_args(self, show_annotation: bool = True) -> str:
         def get_annotation(param: Parameter) -> Any:

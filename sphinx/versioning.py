@@ -8,6 +8,7 @@
     :copyright: Copyright 2007-2020 by the Sphinx team, see AUTHORS.
     :license: BSD, see LICENSE for details.
 """
+
 import pickle
 from itertools import product, zip_longest
 from operator import itemgetter
@@ -18,10 +19,6 @@ from uuid import uuid4
 from docutils.nodes import Node
 
 from sphinx.transforms import SphinxTransform
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
 
 try:
     import Levenshtein

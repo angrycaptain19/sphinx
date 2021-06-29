@@ -216,21 +216,23 @@ def shall_skip(module: str, opts: Any, excludes: List[str] = []) -> bool:
 
     # Are we a package (here defined as __init__.py, not the folder in itself)
     if is_initpy(module):
-        # Yes, check if we have any non-excluded modules at all here
-        all_skipped = True
         basemodule = path.dirname(module)
-        for submodule in glob.glob(path.join(basemodule, '*.py')):
-            if not is_excluded(path.join(basemodule, submodule), excludes):
                 # There's a non-excluded module here, we won't skip
-                all_skipped = False
+        all_skipped = all(
+            is_excluded(path.join(basemodule, submodule), excludes)
+            for submodule in glob.glob(path.join(basemodule, '*.py'))
+        )
+
         if all_skipped:
             return True
 
     # skip if it has a "private" name and this is selected
     filename = path.basename(module)
-    if is_initpy(filename) and filename.startswith('_') and not opts.includeprivate:
-        return True
-    return False
+    return bool(
+        is_initpy(filename)
+        and filename.startswith('_')
+        and not opts.includeprivate
+    )
 
 
 def is_skipped_package(dirname: str, opts: Any, excludes: List[str] = []) -> bool:
@@ -245,11 +247,7 @@ def is_skipped_package(dirname: str, opts: Any, excludes: List[str] = []) -> boo
         return True
 
     # Check there is some showable module inside package
-    if all(is_excluded(path.join(dirname, f), excludes) for f in files):
-        # all submodules are excluded
-        return True
-    else:
-        return False
+    return all(is_excluded(path.join(dirname, f), excludes) for f in files)
 
 
 def is_skipped_module(filename: str, opts: Any, excludes: List[str]) -> bool:
@@ -301,10 +299,7 @@ def recurse_tree(rootpath: str, excludes: List[str], opts: Any,
                 continue
         # remove hidden ('.') and private ('_') directories, as well as
         # excluded dirs
-        if includeprivate:
-            exclude_prefixes = ('.',)  # type: Tuple[str, ...]
-        else:
-            exclude_prefixes = ('.', '_')
+        exclude_prefixes = ('.', ) if includeprivate else ('.', '_')
         subs[:] = sorted(sub for sub in subs if not sub.startswith(exclude_prefixes) and
                          not is_excluded(path.join(root, sub), excludes))
 
@@ -338,10 +333,7 @@ def is_excluded(root: str, excludes: List[str]) -> bool:
     Note: by having trailing slashes, we avoid common prefix issues, like
           e.g. an exclude "foo" also accidentally excluding "foobar".
     """
-    for exclude in excludes:
-        if fnmatch(root, exclude):
-            return True
-    return False
+    return any(fnmatch(root, exclude) for exclude in excludes)
 
 
 def get_parser() -> argparse.ArgumentParser:

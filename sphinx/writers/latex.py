@@ -11,6 +11,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import re
 import warnings
 from collections import defaultdict
@@ -42,12 +43,6 @@ except ImportError:
     # In Debain/Ubuntu, roman package is provided as roman, not as docutils.utils.roman
     from roman import toRoman  # type: ignore
 
-if False:
-    # For type annotation
-    from sphinx.builders.latex import LaTeXBuilder
-    from sphinx.builders.latex.theming import Theme
-
-
 logger = logging.getLogger(__name__)
 
 MAX_CITATION_LABEL_LENGTH = 8
@@ -67,8 +62,6 @@ EXTRA_RE = re.compile(r'^(.*\S)\s+\(([^()]*)\)\s*$')
 
 class collected_footnote(nodes.footnote):
     """Footnotes that are collected are assigned this class."""
-
-
 class UnsupportedError(SphinxError):
     category = 'Markup is unsupported in LaTeX'
 
@@ -334,9 +327,7 @@ class LaTeXTranslator(SphinxTranslator):
             # of non-Japanese 'howto' case
             if document.get('docclass') == 'howto':
                 docclass = self.config.latex_docclass.get('howto', 'article')
-                if docclass[0] == 'j':  # Japanese class...
-                    pass
-                else:
+                if docclass[0] != 'j':
                     self.sectionnames.remove('chapter')
             else:
                 docclass = self.config.latex_docclass.get('manual', 'report')
@@ -929,17 +920,16 @@ class LaTeXTranslator(SphinxTranslator):
             cell = self.table.cell(self.table.row, self.table.col)
             if cell is None:  # not a bottom of multirow cell
                 break
-            else:  # a bottom of multirow cell
-                self.table.col += cell.width
-                if cell.col:
-                    self.body.append('&')
-                if cell.width == 1:
-                    # insert suitable strut for equalizing row heights in given multirow
-                    self.body.append('\\sphinxtablestrut{%d}' % cell.cell_id)
-                else:  # use \multicolumn for wide multirow cell
-                    self.body.append('\\multicolumn{%d}{|l|}'
-                                     '{\\sphinxtablestrut{%d}}' %
-                                     (cell.width, cell.cell_id))
+            self.table.col += cell.width
+            if cell.col:
+                self.body.append('&')
+            if cell.width == 1:
+                # insert suitable strut for equalizing row heights in given multirow
+                self.body.append('\\sphinxtablestrut{%d}' % cell.cell_id)
+            else:  # use \multicolumn for wide multirow cell
+                self.body.append('\\multicolumn{%d}{|l|}'
+                                 '{\\sphinxtablestrut{%d}}' %
+                                 (cell.width, cell.cell_id))
 
     def depart_row(self, node: Element) -> None:
         self.body.append('\\\\\n')
@@ -986,11 +976,15 @@ class LaTeXTranslator(SphinxTranslator):
             self.needs_linetrimming = 1
         if len(node.traverse(nodes.paragraph)) >= 2:
             self.table.has_oldproblematic = True
-        if isinstance(node.parent.parent, nodes.thead) or (cell.col in self.table.stubs):
-            if len(node) == 1 and isinstance(node[0], nodes.paragraph) and node.astext() == '':
-                pass
-            else:
-                self.body.append('\\sphinxstyletheadfamily ')
+        if (
+            isinstance(node.parent.parent, nodes.thead)
+            or (cell.col in self.table.stubs)
+        ) and (
+            len(node) != 1
+            or not isinstance(node[0], nodes.paragraph)
+            or node.astext() != ''
+        ):
+            self.body.append('\\sphinxstyletheadfamily ')
         if self.needs_linetrimming:
             self.pushbody([])
         self.context.append(context)
@@ -1015,18 +1009,17 @@ class LaTeXTranslator(SphinxTranslator):
             nextcell = self.table.cell()
             if nextcell is None:  # not a bottom of multirow cell
                 break
-            else:  # a bottom part of multirow cell
-                self.table.col += nextcell.width
-                self.body.append('&')
-                if nextcell.width == 1:
-                    # insert suitable strut for equalizing row heights in multirow
-                    # they also serve to clear colour panels which would hide the text
-                    self.body.append('\\sphinxtablestrut{%d}' % nextcell.cell_id)
-                else:
-                    # use \multicolumn for wide multirow cell
-                    self.body.append('\\multicolumn{%d}{l|}'
-                                     '{\\sphinxtablestrut{%d}}' %
-                                     (nextcell.width, nextcell.cell_id))
+            self.table.col += nextcell.width
+            self.body.append('&')
+            if nextcell.width == 1:
+                # insert suitable strut for equalizing row heights in multirow
+                # they also serve to clear colour panels which would hide the text
+                self.body.append('\\sphinxtablestrut{%d}' % nextcell.cell_id)
+            else:
+                # use \multicolumn for wide multirow cell
+                self.body.append('\\multicolumn{%d}{l|}'
+                                 '{\\sphinxtablestrut{%d}}' %
+                                 (nextcell.width, nextcell.cell_id))
 
     def visit_acks(self, node: Element) -> None:
         # this is a list in the source, but should be rendered as a
@@ -1158,11 +1151,9 @@ class LaTeXTranslator(SphinxTranslator):
                 not isinstance(node.parent[index - 1], nodes.compound)):
             # insert blank line, if the paragraph follows a non-paragraph node in a compound
             self.body.append('\\noindent\n')
-        elif index == 1 and isinstance(node.parent, (nodes.footnote, footnotetext)):
-            # don't insert blank line, if the paragraph is second child of a footnote
-            # (first one is label node)
-            pass
-        else:
+        elif index != 1 or not isinstance(
+            node.parent, (nodes.footnote, footnotetext)
+        ):
             self.body.append('\n')
 
     def depart_paragraph(self, node: Element) -> None:
@@ -1209,7 +1200,6 @@ class LaTeXTranslator(SphinxTranslator):
     def visit_image(self, node: Element) -> None:
         attrs = node.attributes
         pre = []    # type: List[str]
-                    # in reverse order
         post = []   # type: List[str]
         include_graphics_options = []
         has_hyperlink = isinstance(node.parent, nodes.reference)
@@ -1231,12 +1221,11 @@ class LaTeXTranslator(SphinxTranslator):
                 h = self.latex_image_length(attrs['height'])
             if h:
                 include_graphics_options.append('height=%s' % h)
-        if 'scale' in attrs:
-            if not include_graphics_options:
-                # if no "width" nor "height", \sphinxincludegraphics will fit
-                # to the available text width if oversized after rescaling.
-                include_graphics_options.append('scale=%s'
-                                                % (float(attrs['scale']) / 100.0))
+        if 'scale' in attrs and not include_graphics_options:
+            # if no "width" nor "height", \sphinxincludegraphics will fit
+            # to the available text width if oversized after rescaling.
+            include_graphics_options.append('scale=%s'
+                                            % (float(attrs['scale']) / 100.0))
         if 'align' in attrs:
             align_prepost = {
                 # By default latex aligns the top of an image.
@@ -1265,10 +1254,9 @@ class LaTeXTranslator(SphinxTranslator):
         pre.reverse()
         if node['uri'] in self.builder.images:
             uri = self.builder.images[node['uri']]
+        elif self.ignore_missing_images:
+            return
         else:
-            # missing image!
-            if self.ignore_missing_images:
-                return
             uri = node['uri']
         if uri.find('://') != -1:
             # ignore remote images
@@ -1553,12 +1541,7 @@ class LaTeXTranslator(SphinxTranslator):
         elif uri.startswith('%'):
             # references to documents or labels inside documents
             hashindex = uri.find('#')
-            if hashindex == -1:
-                # reference to the document
-                id = uri[1:] + '::doc'
-            else:
-                # reference to a label
-                id = uri[1:].replace('#', ':')
+            id = uri[1:] + '::doc' if hashindex == -1 else uri[1:].replace('#', ':')
             self.body.append(self.hyperlink(id))
             if (len(node) and
                     isinstance(node[0], nodes.Element) and
@@ -1574,16 +1557,15 @@ class LaTeXTranslator(SphinxTranslator):
                     self.context.append('}}} (%s)' % self.hyperpageref(id))
                 else:
                     self.context.append('}}}')
-        else:
-            if len(node) == 1 and uri == node[0]:
-                if node.get('nolinkurl'):
-                    self.body.append('\\sphinxnolinkurl{%s}' % self.encode_uri(uri))
-                else:
-                    self.body.append('\\sphinxurl{%s}' % self.encode_uri(uri))
-                raise nodes.SkipNode
+        elif len(node) == 1 and uri == node[0]:
+            if node.get('nolinkurl'):
+                self.body.append('\\sphinxnolinkurl{%s}' % self.encode_uri(uri))
             else:
-                self.body.append('\\sphinxhref{%s}{' % self.encode_uri(uri))
-                self.context.append('}')
+                self.body.append('\\sphinxurl{%s}' % self.encode_uri(uri))
+            raise nodes.SkipNode
+        else:
+            self.body.append('\\sphinxhref{%s}{' % self.encode_uri(uri))
+            self.context.append('}')
 
     def depart_reference(self, node: Element) -> None:
         self.body.append(self.context.pop())
@@ -1694,9 +1676,7 @@ class LaTeXTranslator(SphinxTranslator):
         pass
 
     def visit_citation_reference(self, node: Element) -> None:
-        if self.in_title:
-            pass
-        else:
+        if not self.in_title:
             self.body.append('\\sphinxcite{%s:%s}' % (node['docname'], node['refname']))
             raise nodes.SkipNode
 
@@ -1824,8 +1804,7 @@ class LaTeXTranslator(SphinxTranslator):
         done = 0
         if len(node.children) == 1:
             child = node.children[0]
-            if isinstance(child, nodes.bullet_list) or \
-                    isinstance(child, nodes.enumerated_list):
+            if isinstance(child, (nodes.bullet_list, nodes.enumerated_list)):
                 done = 1
         if not done:
             self.body.append('\\begin{quote}\n')
@@ -1836,8 +1815,7 @@ class LaTeXTranslator(SphinxTranslator):
         done = 0
         if len(node.children) == 1:
             child = node.children[0]
-            if isinstance(child, nodes.bullet_list) or \
-                    isinstance(child, nodes.enumerated_list):
+            if isinstance(child, (nodes.bullet_list, nodes.enumerated_list)):
                 done = 1
         if not done:
             self.body.append('\\end{quote}\n')
@@ -2113,14 +2091,9 @@ class LaTeXTranslator(SphinxTranslator):
             ret.append('\\makeatother\n')
 
         codeblock = self.builder.config.numfig_format['code-block'].split('%s', 1)
-        if len(codeblock) == 1:
-            pass  # FIXME
-        else:
+        if len(codeblock) != 1:
             definition = self.escape(codeblock[0]).strip()
             ret.append(self.babel_renewcommand('\\literalblockname', definition))
-            if codeblock[1]:
-                pass  # FIXME
-
         return ''.join(ret)
 
 

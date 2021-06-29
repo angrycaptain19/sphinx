@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 from collections import namedtuple
 from typing import Any, Dict, List
 from typing import cast
@@ -19,12 +20,6 @@ from sphinx import addnodes
 from sphinx.domains import Domain
 from sphinx.locale import _
 from sphinx.util.docutils import SphinxDirective
-
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
-    from sphinx.environment import BuildEnvironment
 
 
 versionlabels = {

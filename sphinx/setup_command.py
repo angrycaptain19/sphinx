@@ -11,6 +11,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import os
 import sys
 from distutils.cmd import Command
@@ -22,10 +23,6 @@ from sphinx.cmd.build import handle_exception
 from sphinx.util.console import nocolor, color_terminal
 from sphinx.util.docutils import docutils_namespace, patch_docutils
 from sphinx.util.osutil import abspath
-
-if False:
-    # For type annotation
-    from typing import Any, Dict  # NOQA
 
 
 class BuildDoc(Command):
@@ -162,10 +159,7 @@ class BuildDoc(Command):
         # type: () -> None
         if not color_terminal():
             nocolor()
-        if not self.verbose:  # type: ignore
-            status_stream = StringIO()
-        else:
-            status_stream = sys.stdout  # type: ignore
+        status_stream = StringIO() if not self.verbose else sys.stdout
         confoverrides = {}  # type: Dict[str, Any]
         if self.project:
             confoverrides['project'] = self.project

@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import re
 from typing import Any, Dict, List, Tuple
 from typing import cast
@@ -26,11 +27,6 @@ from sphinx.util.docfields import DocFieldTransformer, Field, TypedField
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.typing import DirectiveOption
 
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
-
-
 # RE to strip backslash escapes
 nl_escape_re = re.compile(r'\\\n')
 strip_backslash_re = re.compile(r'\\(.)')
@@ -42,11 +38,10 @@ def optional_int(argument: str) -> int:
     """
     if argument is None:
         return None
-    else:
-        value = int(argument)
-        if value < 0:
-            raise ValueError('negative value; must be positive or zero')
-        return value
+    value = int(argument)
+    if value < 0:
+        raise ValueError('negative value; must be positive or zero')
+    return value
 
 
 class ObjectDescription(SphinxDirective):

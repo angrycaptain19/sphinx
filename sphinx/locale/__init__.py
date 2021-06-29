@@ -226,12 +226,11 @@ def get_translation(catalog: str, namespace: str = 'general') -> Callable:
         if not is_translator_registered(catalog, namespace):
             # not initialized yet
             return _TranslationProxy(_lazy_translate, catalog, namespace, message)  # type: ignore  # NOQA
-        else:
-            translator = get_translator(catalog, namespace)
-            if len(args) <= 1:
-                return translator.gettext(message)
-            else:  # support pluralization
-                return translator.ngettext(message, args[0], args[1])
+        translator = get_translator(catalog, namespace)
+        if len(args) <= 1:
+            return translator.gettext(message)
+        else:  # support pluralization
+            return translator.ngettext(message, args[0], args[1])
 
     return gettext
 

@@ -8,15 +8,11 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import sys
 import warnings
 from importlib import import_module
 from typing import Any, Dict
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-
 
 class RemovedInSphinx40Warning(DeprecationWarning):
     pass

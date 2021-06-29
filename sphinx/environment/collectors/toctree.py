@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 from typing import Any, Dict, List, Set, Tuple, TypeVar
 from typing import cast
 
@@ -22,11 +23,6 @@ from sphinx.environment.collectors import EnvironmentCollector
 from sphinx.locale import __
 from sphinx.transforms import SphinxContentsFilter
 from sphinx.util import url_re, logging
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-
 
 N = TypeVar('N')
 
@@ -93,12 +89,7 @@ class TocTreeCollector(EnvironmentCollector):
                     visitor = SphinxContentsFilter(doctree)
                     title.walkabout(visitor)
                     nodetext = visitor.get_entry_text()
-                    if not numentries[0]:
-                        # for the very first toc entry, don't add an anchor
-                        # as it is the file's title anyway
-                        anchorname = ''
-                    else:
-                        anchorname = '#' + sectionnode['ids'][0]
+                    anchorname = '' if not numentries[0] else '#' + sectionnode['ids'][0]
                     numentries[0] += 1
                     # make these nodes:
                     # list_item -> compact_paragraph -> reference
@@ -155,13 +146,7 @@ class TocTreeCollector(EnvironmentCollector):
                     _walk_toc(subnode, secnums, depth - 1, titlenode)
                     numstack.pop()
                     titlenode = None
-                elif isinstance(subnode, nodes.list_item):
-                    _walk_toc(subnode, secnums, depth, titlenode)
-                    titlenode = None
-                elif isinstance(subnode, addnodes.only):
-                    # at this stage we don't know yet which sections are going
-                    # to be included; just include all of them, even if it leads
-                    # to gaps in the numbering
+                elif isinstance(subnode, (nodes.list_item, addnodes.only)):
                     _walk_toc(subnode, secnums, depth, titlenode)
                     titlenode = None
                 elif isinstance(subnode, addnodes.compact_paragraph):

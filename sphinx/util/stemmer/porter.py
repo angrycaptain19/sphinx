@@ -48,8 +48,7 @@ class PorterStemmer:
 
     def cons(self, i: int) -> int:
         """cons(i) is TRUE <=> b[i] is a consonant."""
-        if self.b[i] == 'a' or self.b[i] == 'e' or self.b[i] == 'i' \
-           or self.b[i] == 'o' or self.b[i] == 'u':
+        if self.b[i] in ['a', 'e', 'i', 'o', 'u']:
             return 0
         if self.b[i] == 'y':
             if i == self.k0:
@@ -86,7 +85,7 @@ class PorterStemmer:
                     break
                 i = i + 1
             i = i + 1
-            n = n + 1
+            n += 1
             while 1:
                 if i > self.j:
                     return n
@@ -123,7 +122,7 @@ class PorterStemmer:
            or not self.cons(i - 2):
             return 0
         ch = self.b[i]
-        if ch == 'w' or ch == 'x' or ch == 'y':
+        if ch in ['w', 'x', 'y']:
             return 0
         return 1
 
@@ -193,7 +192,7 @@ class PorterStemmer:
             elif self.doublec(self.k):
                 self.k = self.k - 1
                 ch = self.b[self.k]
-                if ch == 'l' or ch == 's' or ch == 'z':
+                if ch in ['l', 's', 'z']:
                     self.k = self.k + 1
             elif (self.m() == 1 and self.cvc(self.k)):
                 self.setto("e")
@@ -288,80 +287,58 @@ class PorterStemmer:
     def step4(self) -> None:
         """step4() takes off -ant, -ence etc., in context <c>vcvc<v>."""
         if self.b[self.k - 1] == 'a':
-            if self.ends("al"):
-                pass
-            else:
+            if not self.ends("al"):
                 return
         elif self.b[self.k - 1] == 'c':
-            if self.ends("ance"):
-                pass
-            elif self.ends("ence"):
-                pass
-            else:
+            if not self.ends("ance") and (
+                self.ends("ance") or not self.ends("ence")
+            ):
                 return
         elif self.b[self.k - 1] == 'e':
-            if self.ends("er"):
-                pass
-            else:
+            if not self.ends("er"):
                 return
         elif self.b[self.k - 1] == 'i':
-            if self.ends("ic"):
-                pass
-            else:
+            if not self.ends("ic"):
                 return
         elif self.b[self.k - 1] == 'l':
-            if self.ends("able"):
-                pass
-            elif self.ends("ible"):
-                pass
-            else:
+            if not self.ends("able") and (
+                self.ends("able") or not self.ends("ible")
+            ):
                 return
         elif self.b[self.k - 1] == 'n':
-            if self.ends("ant"):
-                pass
-            elif self.ends("ement"):
-                pass
-            elif self.ends("ment"):
-                pass
-            elif self.ends("ent"):
-                pass
-            else:
+            if (
+                not self.ends("ant")
+                and (self.ends("ant") or not self.ends("ement"))
+                and (
+                    self.ends("ant") or self.ends("ement") or not self.ends("ment")
+                )
+                and (
+                    self.ends("ant")
+                    or self.ends("ement")
+                    or self.ends("ment")
+                    or not self.ends("ent")
+                )
+            ):
                 return
         elif self.b[self.k - 1] == 'o':
-            if self.ends("ion") and (self.b[self.j] == 's' or
-                                     self.b[self.j] == 't'):
+            if self.ends("ion") and self.b[self.j] in ['s', 't']:
                 pass
-            elif self.ends("ou"):
-                pass
-            # takes care of -ous
-            else:
+            elif not self.ends("ou"):
                 return
         elif self.b[self.k - 1] == 's':
-            if self.ends("ism"):
-                pass
-            else:
+            if not self.ends("ism"):
                 return
         elif self.b[self.k - 1] == 't':
-            if self.ends("ate"):
-                pass
-            elif self.ends("iti"):
-                pass
-            else:
+            if not self.ends("ate") and (self.ends("ate") or not self.ends("iti")):
                 return
         elif self.b[self.k - 1] == 'u':
-            if self.ends("ous"):
-                pass
-            else:
+            if not self.ends("ous"):
                 return
         elif self.b[self.k - 1] == 'v':
-            if self.ends("ive"):
-                pass
-            else:
+            if not self.ends("ive"):
                 return
         elif self.b[self.k - 1] == 'z':
-            if self.ends("ize"):
-                pass
-            else:
+            if not self.ends("ize"):
                 return
         else:
             return

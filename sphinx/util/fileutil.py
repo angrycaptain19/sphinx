@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import os
 import posixpath
 from typing import Callable, Dict
@@ -16,10 +17,6 @@ from docutils.utils import relative_path
 
 from sphinx.util.osutil import copyfile, ensuredir
 from sphinx.util.typing import PathMatcher
-
-if False:
-    # For type annotation
-    from sphinx.util.template import BaseRenderer
 
 
 def copy_asset_file(source: str, destination: str,

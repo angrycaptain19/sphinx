@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 # Keep this file executable as-is in Python 3!
 # (Otherwise getting the version out of it from setup.py is impossible.)
 
@@ -18,11 +19,6 @@ from os import path
 from subprocess import PIPE
 
 from .deprecation import RemovedInNextVersionWarning
-
-if False:
-    # For type annotation
-    from typing import Any  # NOQA
-
 
 # by default, all DeprecationWarning under sphinx package will be emit.
 # Users can avoid this by using environment variable: PYTHONWARNINGS=

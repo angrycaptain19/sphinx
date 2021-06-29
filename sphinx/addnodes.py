@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import warnings
 from typing import Any, Dict, List, Sequence
 
@@ -15,10 +16,6 @@ from docutils import nodes
 from docutils.nodes import Element, Node
 
 from sphinx.deprecation import RemovedInSphinx40Warning
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
 
 
 class document(nodes.document):
@@ -108,10 +105,7 @@ class toctree(nodes.General, nodes.Element, translatable):
             self['caption'] = translated_message
 
     def extract_original_messages(self) -> List[str]:
-        messages = []  # type: List[str]
-
-        # toctree entries
-        messages.extend(self.get('rawentries', []))
+        messages = list(self.get('rawentries', []))
 
         # :caption: option
         if 'rawcaption' in self:

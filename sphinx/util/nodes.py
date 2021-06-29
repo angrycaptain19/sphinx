@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import re
 import unicodedata
 import warnings
@@ -24,14 +25,6 @@ from sphinx import addnodes
 from sphinx.deprecation import RemovedInSphinx40Warning
 from sphinx.locale import __
 from sphinx.util import logging
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.builders import Builder
-    from sphinx.domain import IndexEntry
-    from sphinx.environment import BuildEnvironment
-    from sphinx.util.tags import Tags
 
 logger = logging.getLogger(__name__)
 
@@ -129,16 +122,17 @@ def apply_source_workaround(node: Element) -> None:
     # * when ``term text : classifier1 : classifier2`` is specified,
     # * rawsource of term node will have: ``term text : classifier1 : classifier2``
     # * rawsource of classifier node will be None
-    if isinstance(node, nodes.classifier) and not node.rawsource:
-        logger.debug('[i18n] PATCH: %r to have source, line and rawsource: %s',
-                     get_full_module_name(node), repr_domxml(node))
-        definition_list_item = node.parent
-        node.source = definition_list_item.source
-        node.line = definition_list_item.line - 1
-        node.rawsource = node.astext()  # set 'classifier1' (or 'classifier2')
-    elif isinstance(node, nodes.classifier) and not node.source:
-        # docutils-0.15 fills in rawsource attribute, but not in source.
-        node.source = node.parent.source
+    if isinstance(node, nodes.classifier):
+        if not node.rawsource:
+            logger.debug('[i18n] PATCH: %r to have source, line and rawsource: %s',
+                         get_full_module_name(node), repr_domxml(node))
+            definition_list_item = node.parent
+            node.source = definition_list_item.source
+            node.line = definition_list_item.line - 1
+            node.rawsource = node.astext()  # set 'classifier1' (or 'classifier2')
+        elif not node.source:
+            # docutils-0.15 fills in rawsource attribute, but not in source.
+            node.source = node.parent.source
     if isinstance(node, nodes.image) and node.source is None:
         logger.debug('[i18n] PATCH: %r to have source, line: %s',
                      get_full_module_name(node), repr_domxml(node))
@@ -190,11 +184,8 @@ IGNORED_NODES = (
 
 
 def is_pending_meta(node: Node) -> bool:
-    if (isinstance(node, nodes.pending) and
-       isinstance(node.details.get('nodes', [None])[0], addnodes.meta)):
-        return True
-    else:
-        return False
+    return (isinstance(node, nodes.pending) and
+       isinstance(node.details.get('nodes', [None])[0], addnodes.meta))
 
 
 def is_translatable(node: Node) -> bool:
@@ -315,13 +306,10 @@ def get_prev_node(node: Node) -> Node:
         return None
 
 
-def traverse_translatable_index(doctree: Element) -> Iterable[Tuple[Element, List["IndexEntry"]]]:  # NOQA
+def traverse_translatable_index(doctree: Element) -> Iterable[Tuple[Element, List["IndexEntry"]]]:    # NOQA
     """Traverse translatable index node from a document tree."""
     for node in doctree.traverse(NodeMatcher(addnodes.index, inline=False)):  # type: addnodes.index  # NOQA
-        if 'raw_entries' in node:
-            entries = node['raw_entries']
-        else:
-            entries = node['entries']
+        entries = node['raw_entries'] if 'raw_entries' in node else node['entries']
         yield node, entries
 
 
@@ -544,12 +532,11 @@ def make_refnode(builder: "Builder", fromdocname: str, todocname: str, targetid:
     node = nodes.reference('', '', internal=True)
     if fromdocname == todocname and targetid:
         node['refid'] = targetid
+    elif targetid:
+        node['refuri'] = (builder.get_relative_uri(fromdocname, todocname) +
+                          '#' + targetid)
     else:
-        if targetid:
-            node['refuri'] = (builder.get_relative_uri(fromdocname, todocname) +
-                              '#' + targetid)
-        else:
-            node['refuri'] = builder.get_relative_uri(fromdocname, todocname)
+        node['refuri'] = builder.get_relative_uri(fromdocname, todocname)
     if title:
         node['reftitle'] = title
     node.append(child)

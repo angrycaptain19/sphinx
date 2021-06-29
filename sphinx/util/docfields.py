@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import warnings
 from typing import Any, Dict, List, Tuple, Union
 from typing import cast
@@ -19,12 +20,6 @@ from docutils.nodes import Node
 from sphinx import addnodes
 from sphinx.deprecation import RemovedInSphinx40Warning
 from sphinx.util.typing import TextlikeNode
-
-if False:
-    # For type annotation
-    from typing import Type  # for python3.5.1
-    from sphinx.environment import BuildEnvironment
-    from sphinx.directive import ObjectDescription
 
 
 def _is_single_paragraph(node: nodes.field_body) -> bool:
@@ -312,8 +307,7 @@ class DocFieldTransformer:
             if is_typefield:
                 # filter out only inline nodes; others will result in invalid
                 # markup being written out
-                content = [n for n in content if isinstance(n, nodes.Inline) or
-                           isinstance(n, nodes.Text)]
+                content = [n for n in content if isinstance(n, (nodes.Inline, nodes.Text))]
                 if content:
                     types.setdefault(typename, {})[fieldarg] = content
                 continue

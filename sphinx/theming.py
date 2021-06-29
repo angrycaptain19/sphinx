@@ -8,6 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
+
 import configparser
 import os
 import shutil
@@ -23,11 +24,6 @@ from sphinx.errors import ThemeError
 from sphinx.locale import __
 from sphinx.util import logging
 from sphinx.util.osutil import ensuredir
-
-if False:
-    # For type annotation
-    from sphinx.application import Sphinx
-
 
 logger = logging.getLogger(__name__)
 
@@ -113,11 +109,7 @@ class Theme:
 
     def get_options(self, overrides: Dict[str, Any] = {}) -> Dict[str, Any]:
         """Return a dictionary of theme options and their values."""
-        if self.base:
-            options = self.base.get_options()
-        else:
-            options = {}
-
+        options = self.base.get_options() if self.base else {}
         try:
             options.update(self.config.items('options'))
         except configparser.NoSectionError:
@@ -227,9 +219,8 @@ class HTMLThemeFactory:
                 else:
                     logger.warning(__('file %r on theme path is not a valid '
                                       'zipfile or contains no theme'), entry)
-            else:
-                if path.isfile(path.join(pathname, THEMECONF)):
-                    themes[entry] = pathname
+            elif path.isfile(path.join(pathname, THEMECONF)):
+                themes[entry] = pathname
 
         return themes
 
